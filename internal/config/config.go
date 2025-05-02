@@ -32,9 +32,9 @@ func (c *Config) InitalizeLogger() {
 	logger, _ := zap.NewProduction()
 
 	if c.IsDevelopment() {
-		config := zap.NewDevelopmentConfig()
-		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-		logger, _ = config.Build()
+		logConfig := zap.NewDevelopmentConfig()
+		logConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+		logger, _ = logConfig.Build()
 	}
 
 	defer logger.Sync()
