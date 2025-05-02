@@ -1,8 +1,11 @@
 package config
 
+import "go.uber.org/zap"
+
 type Config struct {
-	Name string
-	Env  Env
+	Name   string
+	Env    Env
+	Logger *zap.Logger
 }
 
 // singleton instance of Config
@@ -15,6 +18,32 @@ func GetConfig() *Config {
 			Name: "default",
 			Env:  LoadEnv(),
 		}
+
+		instance.InitalizeLogger()
 	}
+
 	return instance
+}
+
+func (c *Config) InitalizeLogger() {
+	logger, _ := zap.NewProduction()
+
+	if c.IsDevelopment() {
+		logger, _ = zap.NewDevelopment()
+	}
+
+	defer logger.Sync()
+	c.Logger = logger
+}
+
+func (c *Config) IsDevelopment() bool {
+	return c.Env.Environment == "development"
+}
+
+func (c *Config) IsProduction() bool {
+	return c.Env.Environment == "production"
+}
+
+func (c *Config) IsStaging() bool {
+	return c.Env.Environment == "staging"
 }

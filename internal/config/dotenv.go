@@ -63,15 +63,3 @@ func LoadEnv() Env {
 		RedisURL:      os.Getenv("REDIS_URL"),
 	}
 }
-
-func IsDevelopment() bool {
-	return os.Getenv("ENV") == "development"
-}
-
-func IsProduction() bool {
-	return os.Getenv("ENV") == "production"
-}
-
-func IsStaging() bool {
-	return os.Getenv("ENV") == "staging"
-}
