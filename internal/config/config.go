@@ -1,6 +1,9 @@
 package config
 
-import "go.uber.org/zap"
+import (
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
 
 type Config struct {
 	Name   string
@@ -29,7 +32,9 @@ func (c *Config) InitalizeLogger() {
 	logger, _ := zap.NewProduction()
 
 	if c.IsDevelopment() {
-		logger, _ = zap.NewDevelopment()
+		config := zap.NewDevelopmentConfig()
+		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+		logger, _ = config.Build()
 	}
 
 	defer logger.Sync()
