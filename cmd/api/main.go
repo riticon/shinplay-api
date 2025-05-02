@@ -9,5 +9,7 @@ func main() {
 	appConfig := config.GetConfig()
 
 	app := router.CreateNewFiberApp(appConfig)
+
+	router.Routes(app)
 	router.StartServer(app, appConfig)
 }

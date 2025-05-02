@@ -64,3 +64,12 @@ func StartServer(app *fiber.App, config *config.Config) {
 		config.Logger.Fatal("Error starting server", zap.Error(err))
 	}
 }
+
+func Routes(app *fiber.App) {
+	// Define your routes here
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("Hello, World!")
+	})
+
+	// Add more routes as needed
+}
