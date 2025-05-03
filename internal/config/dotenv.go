@@ -8,7 +8,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Env Struct to hold environment variables
+// Env Struct to hold environment variables.
 type Env struct {
 	Environment   string
 	ServerPort    string
@@ -27,19 +27,15 @@ type Env struct {
 	CORS          string
 }
 
-// LoadEnv loads environment variables from a .env file
+// LoadEnv loads environment variables from a .env file.
 func LoadEnv() Env {
 	// Load .env file
 	// load specific to environment using string interpolation
-	environment := os.Getenv("ENV")
-	if environment == "" {
-		// default to development if ENV is not set
-		environment = "development"
-	}
+	environment := initializeEnvironment()
 	// load .env file based on ENV variable
 	envFile := fmt.Sprintf(".env.%s", environment)
-	err := godotenv.Load(envFile)
 
+	err := godotenv.Load(envFile)
 	if err != nil {
 		// throw error if .env file is not found
 		log.Fatalf("Error loading .env.%s file", environment)
@@ -62,4 +58,14 @@ func LoadEnv() Env {
 		RedisPassword: os.Getenv("REDIS_PASSWORD"),
 		RedisURL:      os.Getenv("REDIS_URL"),
 	}
+}
+
+func initializeEnvironment() string {
+	environment := os.Getenv("ENV")
+	if environment == "" {
+		// default to development if ENV is not set
+		environment = "development"
+	}
+
+	return environment
 }

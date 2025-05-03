@@ -10,6 +10,6 @@ func main() {
 
 	app := router.CreateNewFiberApp(appConfig)
 
-	router.Routes(app)
-	router.StartServer(app, appConfig)
+	app.Routes()
+	app.StartServer()
 }

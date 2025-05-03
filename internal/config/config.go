@@ -11,10 +11,10 @@ type Config struct {
 	Logger *zap.Logger
 }
 
-// singleton instance of Config
+// singleton instance of Config.
 var instance *Config
 
-// GetConfig returns the singleton instance of Config
+// GetConfig returns the singleton instance of Config.
 func GetConfig() *Config {
 	if instance == nil {
 		instance = &Config{
@@ -37,7 +37,7 @@ func (c *Config) InitalizeLogger() {
 		logger, _ = logConfig.Build()
 	}
 
-	defer logger.Sync()
+	defer logger.Sync() //nolint:errcheck
 	c.Logger = logger
 }
 

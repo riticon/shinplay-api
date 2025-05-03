@@ -11,12 +11,16 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
-	"go.uber.org/zap"
-
 	"github.com/shinplay/internal/config"
+	"go.uber.org/zap"
 )
 
-func CreateNewFiberApp(config *config.Config) *fiber.App {
+type Server struct {
+	appConfig *config.Config
+	app       *fiber.App
+}
+
+func CreateNewFiberApp(config *config.Config) Server {
 	fiberOptions := fiber.Config{
 		ReadTimeout: 30 * time.Second,
 	}
@@ -49,27 +53,37 @@ func CreateNewFiberApp(config *config.Config) *fiber.App {
 		},
 	}))
 
-	return app
-}
-
-func StartServer(app *fiber.App, config *config.Config) {
-	port := config.Env.ServerPort
-	host := config.Env.ServerHost
-
-	serverAddr := host + ":" + port
-	config.Logger.Info("Starting server", zap.String("address", serverAddr), zap.String("environment", config.Env.Environment))
-
-	// Start server
-	if err := app.Listen(serverAddr); err != nil {
-		config.Logger.Fatal("Error starting server", zap.Error(err))
+	return Server{
+		appConfig: config,
+		app:       app,
 	}
 }
 
-func Routes(app *fiber.App) {
+func (s *Server) StartServer() {
+	port := s.appConfig.Env.ServerPort
+	host := s.appConfig.Env.ServerHost
+
+	serverAddr := host + ":" + port
+	s.appConfig.Logger.Info(
+		"Starting server",
+		zap.String("address", serverAddr),
+		zap.String("environment", s.appConfig.Env.Environment),
+	)
+
+	// Start server
+	if err := s.app.Listen(serverAddr); err != nil {
+		s.appConfig.Logger.Fatal("Error starting server", zap.Error(err))
+	}
+}
+
+func (s *Server) Routes() {
 	// Define your routes here
-	app.Get("/", func(c *fiber.Ctx) error {
+	s.app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendString("Hello, World!")
 	})
 
 	// Add more routes as needed
+	s.app.Get("/health", func(c *fiber.Ctx) error {
+		return c.SendString("OK")
+	})
 }
