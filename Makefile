@@ -1,0 +1,35 @@
+.PHONY:
+tools:
+	@curl -sSL https://raw.githubusercontent.com/air-verse/air/master/install.sh | sh -s
+	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s v2.1.5
+
+dev:
+	@echo "[RUN] Running the application in development mode..."
+	@echo "[RUN] Installing dependencies..."
+	@go mod tidy
+	@echo "[RUN] Installing air..."
+	@echo "[RUN] Running the application..."
+	@bin/air
+
+lint-check:
+	@echo "[RUN] Running linter checks..."
+	@bin/golangci-lint run
+
+lint-fix:
+	@echo "[RUN] RRunning linterunning linter fixes..."
+	@bin/golangci-lint run --fix
+
+
+build:
+	@echo "[RUN] Building the application..."
+	@echo "[RUN] Installing dependencies..."
+	@go mod tidy
+	@go build -o build/shinplay ./cmd/api
+	@echo "[RUN] Building the application..."
+
+server:
+	@echo "[RUN] Running the application in production mode..."
+	@echo "[RUN] Building the application..."
+	@go build -o build/shinplay ./cmd/api
+	@echo "[RUN] Running the application..."
+	@./build/shinplay
