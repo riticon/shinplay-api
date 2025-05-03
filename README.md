@@ -1,3 +1,34 @@
+# Dev Setup
+
+## Prerequisite
+
+go `>=1.24.2`
+
+### Install Dev dependencies
+
+Run
+```bash
+make tools
+```
+see `Makefile` to know more about dev dependencies
+
+Once All Dev Dependencies are installed now you're ready to run dev server with hot reload capabilities
+
+### Running Dev Server
+```bash
+make dev
+```
+
+### To Build the package
+```bash
+make build
+```
+
+### To run build
+```bash
+make server
+```
+
 # Contribution Guide
 
 ### Git conventions
