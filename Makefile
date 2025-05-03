@@ -16,3 +16,10 @@ build:
 	@go mod tidy
 	@go build -o build/shinplay ./cmd/api
 	@echo "[RUN] Building the application..."
+
+server:
+	@echo "[RUN] Running the application in production mode..."
+	@echo "[RUN] Building the application..."
+	@go build -o build/shinplay ./cmd/api
+	@echo "[RUN] Running the application..."
+	@./build/shinplay
