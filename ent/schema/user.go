@@ -14,8 +14,11 @@ type User struct {
 // Fields of the User.
 func (User) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("auth_id").Unique().Immutable().Default(publicid.Must()).
-			Comment("Unique identifier for the user, generated using publicid package."),
+		field.String("auth_id").MaxLen(24).DefaultFunc(publicid.Must).NotEmpty().Unique(),
+		field.String("username").MaxLen(40).Optional().Unique(),
+		field.String("first_name").Optional(),
+		field.String("last_name").Optional(),
+		field.String("email").Optional().Unique(),
 	}
 }
 
