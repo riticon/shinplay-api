@@ -3,12 +3,20 @@ package schema
 import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/mixin"
 	"github.com/shinplay/pkg/publicid"
 )
 
 // User holds the schema definition for the User entity.
 type User struct {
 	ent.Schema
+}
+
+func (User) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		mixin.CreateTime{},
+		mixin.UpdateTime{},
+	}
 }
 
 // Fields of the User.
