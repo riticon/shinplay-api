@@ -24,6 +24,9 @@ lint-fix:
 	@echo "[RUN] RRunning linterunning linter fixes..."
 	@bin/golangci-lint run --fix
 
+migrate:
+	@echo "[RUN] Running database migrations..."
+	@sudo go generate ./ent
 
 build:
 	@echo "[RUN] Building the application..."
