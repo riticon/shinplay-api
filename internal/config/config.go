@@ -1,6 +1,8 @@
 package config
 
 import (
+	"sync"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -27,14 +29,17 @@ type Config struct {
 }
 
 // singleton instance of Config.
-var instance *Config
+var (
+	instance *Config
+	once     sync.Once
+)
 
 // GetConfig returns the singleton instance of Config.
 func GetConfig() *Config {
-	if instance == nil {
-		print("Initializing Config...")
 
+	once.Do(func() {
 		env := LoadEnv()
+
 		instance = &Config{
 			Name:        "default",
 			Environment: env.Environment,
@@ -51,9 +56,10 @@ func GetConfig() *Config {
 			},
 			Logger: nil,
 		}
-
 		instance.InitalizeLogger()
-	}
+
+		instance.Logger.Info("Config initialized", zap.String("environment", instance.Environment))
+	})
 
 	return instance
 }
