@@ -20,7 +20,9 @@ type Server struct {
 	app       *fiber.App
 }
 
-func CreateNewFiberApp(config *config.Config) Server {
+func CreateNewFiberApp() Server {
+	config := config.GetConfig()
+
 	fiberOptions := fiber.Config{
 		ReadTimeout: 30 * time.Second,
 	}
@@ -35,7 +37,7 @@ func CreateNewFiberApp(config *config.Config) Server {
 	}))
 
 	app.Use(cors.New(cors.Config{ // CORS configuration
-		AllowOrigins:     config.Env.CORS,
+		AllowOrigins:     config.Server.CORS,
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, X-Request-ID",
 		ExposeHeaders:    "Content-Length, Content-Type",
@@ -60,14 +62,14 @@ func CreateNewFiberApp(config *config.Config) Server {
 }
 
 func (s *Server) StartServer() {
-	port := s.appConfig.Env.ServerPort
-	host := s.appConfig.Env.ServerHost
+	port := s.appConfig.Server.Port
+	host := s.appConfig.Server.Host
 
 	serverAddr := host + ":" + port
 	s.appConfig.Logger.Info(
 		"Starting server",
 		zap.String("address", serverAddr),
-		zap.String("environment", s.appConfig.Env.Environment),
+		zap.String("environment", s.appConfig.Environment),
 	)
 
 	// Start server

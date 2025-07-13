@@ -1,29 +1,65 @@
 package config
 
 import (
+	"sync"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
+type DatabaseConfig struct {
+	Host     string
+	User     string
+	Password string
+	Name     string
+}
+
+type ServerConfig struct {
+	Port string
+	Host string
+	CORS string
+}
+
 type Config struct {
-	Name   string
-	Env    Env
-	Logger *zap.Logger
+	Name        string
+	Environment string
+	Database    DatabaseConfig
+	Server      ServerConfig
+	Logger      *zap.Logger
 }
 
 // singleton instance of Config.
-var instance *Config
+var (
+	instance *Config
+	once     sync.Once
+)
 
 // GetConfig returns the singleton instance of Config.
 func GetConfig() *Config {
-	if instance == nil {
-		instance = &Config{
-			Name: "default",
-			Env:  LoadEnv(),
-		}
 
+	once.Do(func() {
+		env := LoadEnv()
+
+		instance = &Config{
+			Name:        "default",
+			Environment: env.Environment,
+			Database: DatabaseConfig{
+				Host:     env.DBHost,
+				User:     env.DBUser,
+				Password: env.DBPassword,
+				Name:     env.DBName,
+			},
+			Server: ServerConfig{
+				Port: env.ServerPort,
+				Host: env.ServerHost,
+				CORS: env.CORS,
+			},
+			Logger: nil,
+		}
 		instance.InitalizeLogger()
-	}
+
+		instance.Logger.Info("Config initialized", zap.String("environment", instance.Environment))
+	})
 
 	return instance
 }
@@ -42,13 +78,13 @@ func (c *Config) InitalizeLogger() {
 }
 
 func (c *Config) IsDevelopment() bool {
-	return c.Env.Environment == "development"
+	return c.Environment == "development"
 }
 
 func (c *Config) IsProduction() bool {
-	return c.Env.Environment == "production"
+	return c.Environment == "production"
 }
 
 func (c *Config) IsStaging() bool {
-	return c.Env.Environment == "staging"
+	return c.Environment == "staging"
 }
