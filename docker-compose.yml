@@ -1,24 +1,52 @@
-version: '3.8'
+version: "3.8"
 
 services:
+  app:
+    build: .
+    container_name: shinplay-app
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+      - /app/tmp
+    env_file:
+      - .env.development
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - shinplay-network
+
   postgres:
     image: postgres:16
     container_name: postgres
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     environment:
-      POSTGRES_USER: shinplay
-      POSTGRES_PASSWORD: shinplay
-      POSTGRES_DB: shinplay_development
+      POSTGRES_USER: ${POSTGRES_USER:-shinplay}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-shinplay}
+      POSTGRES_DB: ${POSTGRES_DB:-shinplay_development}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env.development
+    networks:
+      - shinplay-network
 
   redis:
     image: redis:7
     container_name: redis
     ports:
-      - "6379:6379"
-    command: ["redis-server", "--requirepass", "shinplay"]
+      - "${REDIS_PORT:-6379}:6379"
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-shinplay}"]
+    env_file:
+      - .env.development
+    networks:
+      - shinplay-network
 
 volumes:
   postgres_data:
+
+networks:
+  shinplay-network:
+    driver: bridge
