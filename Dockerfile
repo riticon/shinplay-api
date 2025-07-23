@@ -4,7 +4,7 @@ FROM golang:1.24.2
 # Set the working directory inside the container
 WORKDIR /app
 
-# Install Air for hot reload
+# Install Dev Tools
 RUN go install github.com/air-verse/air@latest
 
 # Copy go.mod and go.sum files

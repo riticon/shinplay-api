@@ -11,10 +11,9 @@ infra-tools:
 dev:
 	@echo "[RUN] Running the application in development mode..."
 	@echo "[RUN] Installing dependencies..."
-	@go mod tidy
+	@docker compose up --build
 	@echo "[RUN] Installing air..."
 	@echo "[RUN] Running the application..."
-	@bin/air
 
 lint-check:
 	@echo "[RUN] Running linter checks..."
