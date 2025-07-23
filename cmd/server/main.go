@@ -6,7 +6,6 @@ import (
 
 func main() {
 	// ctx := context.Background()
-
 	app := router.CreateNewFiberApp()
 
 	app.Routes()
