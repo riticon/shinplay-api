@@ -20,11 +20,17 @@ type ServerConfig struct {
 	CORS string
 }
 
+type WhatsAppConfig struct {
+	Token   string
+	PhoneId string
+}
+
 type Config struct {
 	Name        string
 	Environment string
 	Database    DatabaseConfig
 	Server      ServerConfig
+	WhatsApp    WhatsAppConfig
 	Logger      *zap.Logger
 }
 
@@ -53,6 +59,10 @@ func GetConfig() *Config {
 				Port: env.ServerPort,
 				Host: env.ServerHost,
 				CORS: env.CORS,
+			},
+			WhatsApp: WhatsAppConfig{
+				Token:   env.WhatsAppToken,
+				PhoneId: env.WhatsAppPhoneId,
 			},
 			Logger: nil,
 		}
