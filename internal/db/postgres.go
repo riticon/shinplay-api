@@ -1,15 +1,19 @@
 package db
 
 import (
+	"context"
 	"fmt"
 
 	_ "github.com/lib/pq"
 	"github.com/shinplay/ent"
 	"github.com/shinplay/internal/config"
+	"go.uber.org/zap"
 )
 
-func NewPostgresDB() (*ent.Client, error) {
+func InitializeDatabase() {
 	config := config.GetConfig()
+
+	config.Logger.Info("Initializing PostgreSQL database connection")
 
 	db, err := ent.Open(
 		"postgres",
@@ -22,8 +26,12 @@ func NewPostgresDB() (*ent.Client, error) {
 	)
 
 	if err != nil {
-		return nil, err
+		panic("Failed to connect to database: " + err.Error())
 	}
 
-	return db, nil
+	if err := db.Schema.Create(context.Background()); err != nil {
+		config.Logger.Fatal("failed creating schema resources: %v", zap.Error(err))
+	}
+
+	config.Logger.Info("PostgreSQL database connection established successfully :check_mark:")
 }

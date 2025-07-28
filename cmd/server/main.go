@@ -1,9 +1,6 @@
 package main
 
 import (
-	"context"
-	"log"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/shinplay/internal/auth"
 	"github.com/shinplay/internal/config"
@@ -11,7 +8,6 @@ import (
 )
 
 func main() {
-	// ctx := context.Background()
 	app := fiber.New(
 		fiber.Config{
 			AppName: "Shinplay API",
@@ -26,19 +22,10 @@ func main() {
 	})
 
 	api := app.Group("/api")
-
 	auth.Routes("/auth", api)
 
-	println("Starting server on port:", config.GetConfig().Server.Port)
-
-	db, err := db.NewPostgresDB()
-	if err != nil {
-		panic("Failed to connect to database: " + err.Error())
-	}
-
-	if err := db.Schema.Create(context.Background()); err != nil {
-		log.Fatalf("failed creating schema resources: %v", err)
-	}
+	// initialize postgres database and auto migrate schema
+	db.InitializeDatabase()
 
 	app.Listen(":" + config.GetConfig().Server.Port)
 }
