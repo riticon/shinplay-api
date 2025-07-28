@@ -14,6 +14,7 @@ func main() {
 		},
 	)
 
+	// health check route
 	app.Get("/", func(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 			"status":  "success",
