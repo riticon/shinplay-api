@@ -24,9 +24,10 @@ func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("auth_id").MaxLen(24).DefaultFunc(publicid.Must).NotEmpty().Unique(),
 		field.String("username").MaxLen(40).Optional().Unique(),
+		field.String("email").Optional().Unique(),
+		field.String("phone_number").Optional().Unique().MaxLen(15).MinLen(7),
 		field.String("first_name").Optional(),
 		field.String("last_name").Optional(),
-		field.String("email").Optional().Unique(),
 	}
 }
 

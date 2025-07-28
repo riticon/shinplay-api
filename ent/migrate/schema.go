@@ -15,9 +15,10 @@ var (
 		{Name: "update_time", Type: field.TypeTime},
 		{Name: "auth_id", Type: field.TypeString, Unique: true, Size: 24},
 		{Name: "username", Type: field.TypeString, Unique: true, Nullable: true, Size: 40},
+		{Name: "email", Type: field.TypeString, Unique: true, Nullable: true},
+		{Name: "phone_number", Type: field.TypeString, Unique: true, Nullable: true, Size: 15},
 		{Name: "first_name", Type: field.TypeString, Nullable: true},
 		{Name: "last_name", Type: field.TypeString, Nullable: true},
-		{Name: "email", Type: field.TypeString, Unique: true, Nullable: true},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
