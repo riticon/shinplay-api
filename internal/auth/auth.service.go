@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/shinplay/internal/config"
+	"github.com/shinplay/internal/user"
 )
 
 type Token struct {
@@ -18,18 +19,22 @@ type AuthService interface {
 	LoginOrSignupWithNumber(phoneNumber string, channel string) (token Token, err error)
 	LoginOrSignupWithEmail(email string, channel string) (token Token, err error)
 	SendWhatsAppOTP(phoneNumber string) error
+	GenerateOTP(phoneNumber string) (otp string, err error)
+	VerifyWhatsAppOTP(phoneNumber, otp string) (token Token, err error)
 	ValidateToken(token string) bool
 	RefreshToken(refreshToken string) (token Token, err error)
 	Logout(userId, sessionId string) error
 }
 
 type AuthServiceImpl struct {
-	config *config.Config
+	userService user.UserService
+	config      *config.Config
 }
 
 func NewAuthService() *AuthServiceImpl {
 	return &AuthServiceImpl{
-		config: config.GetConfig(),
+		userService: user.NewUserService(),
+		config:      config.GetConfig(),
 	}
 }
 
@@ -43,10 +48,8 @@ func (s *AuthServiceImpl) SendWhatsAppOTP(phoneNumber, otp string) error {
 	url := "https://graph.facebook.com/v22.0/" + s.config.WhatsApp.PhoneId + "/messages"
 	token := s.config.WhatsApp.Token
 
-	println("Sending WhatsApp OTP to:", phoneNumber)
-
 	// Payload
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"messaging_product": "whatsapp",
 		"to":                phoneNumber,
 		"type":              "template",
@@ -109,5 +112,15 @@ func (s *AuthServiceImpl) SendWhatsAppOTP(phoneNumber, otp string) error {
 	}
 
 	return nil
+}
 
+func (s *AuthServiceImpl) GenerateOTP(phoneNumber string) (string, error) {
+	// Generate a random OTP (for simplicity, using a static value here)
+
+	// Find if user with phoneNumber exists
+	// If not, create a new user with the phoneNumber
+	// and return the OTP
+
+	otp := "123456"
+	return otp, nil
 }

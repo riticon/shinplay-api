@@ -23,25 +23,27 @@ func sendSMSOTP(ctx *fiber.Ctx) error {
 		})
 }
 
-type WhatsAppNumberBody struct {
+// POST /auth/whatsapp/send-otp
+// This endpoint sends an OTP via WhatsApp to the provided phone number.
+// It expects a JSON body with the { phone_number }
+
+type WhatsAppOtpBody struct {
 	PhoneNumber string `json:"phone_number" xml:"phone_number" form:"phone_number"`
 }
 
 func sendWhatsAppOTP(ctx *fiber.Ctx) error {
 	authService := NewAuthService()
-	body := new(WhatsAppNumberBody)
+
+	body := new(WhatsAppOtpBody)
 	if err := ctx.BodyParser(body); err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Invalid request",
+			"message": "Please provide a valid phone number",
 		})
 	}
 
-	phoneNumber := body.PhoneNumber
+	go authService.SendWhatsAppOTP(body.PhoneNumber, "123456") // Example OTP
 
-	println("Received phone number:", phoneNumber)
-
-	authService.SendWhatsAppOTP(phoneNumber, "123456") // Example OTP
 	return ctx.
 		Status(fiber.StatusOK).
 		JSON(fiber.Map{
