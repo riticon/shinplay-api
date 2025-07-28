@@ -1,24 +1,29 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
 
+	_ "github.com/lib/pq"
+	"github.com/shinplay/ent"
 	"github.com/shinplay/internal/config"
 )
 
-func NewPostgresDB() (*sql.DB, error) {
+func NewPostgresDB() (*ent.Client, error) {
 	config := config.GetConfig()
 
-	db, err := sql.Open(
+	db, err := ent.Open(
 		"postgres",
-		fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
+		fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 			config.Database.Host,
+			5432, // Default PostgreSQL port
 			config.Database.User,
+			config.Database.Password,
 			config.Database.Name),
 	)
+
 	if err != nil {
 		return nil, err
 	}
+
 	return db, nil
 }
