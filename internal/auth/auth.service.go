@@ -8,6 +8,7 @@ import (
 
 	"github.com/shinplay/internal/config"
 	"github.com/shinplay/internal/user"
+	"go.uber.org/zap"
 )
 
 type Token struct {
@@ -47,6 +48,11 @@ func SendSMSOTP(n *AuthService) {
 func (s *AuthServiceImpl) SendWhatsAppOTP(phoneNumber, otp string) error {
 	url := "https://graph.facebook.com/v22.0/" + s.config.WhatsApp.PhoneId + "/messages"
 	token := s.config.WhatsApp.Token
+	otp, err := s.GenerateOTP(phoneNumber)
+
+	if err != nil {
+		return fmt.Errorf("error generating OTP: %w", err)
+	}
 
 	// Payload
 	payload := map[string]any{
@@ -119,7 +125,13 @@ func (s *AuthServiceImpl) GenerateOTP(phoneNumber string) (string, error) {
 
 	// Find if user with phoneNumber exists
 	// If not, create a new user with the phoneNumber
-	// and return the OTP
+	// and return the OTPW
+	user, err := s.userService.FindOrCreateByPhone(phoneNumber)
+	if err != nil {
+		return "", fmt.Errorf("error finding or creating user: %w", err)
+	}
+
+	s.config.Logger.Info("User found or created", zap.Int("user_id", user.ID))
 
 	otp := "123456"
 	return otp, nil
