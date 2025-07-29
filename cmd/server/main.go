@@ -42,7 +42,7 @@ func main() {
 			})
 		})
 
-		api.Get("/api/auth/whatsapp/otp", r.AuthHandler.SendWhatsAppOTP)
+		api.Post("/auth/whatsapp/send-otp", r.AuthHandler.SendWhatsAppOTP)
 
 	})
 

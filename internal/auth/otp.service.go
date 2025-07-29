@@ -8,23 +8,23 @@ import (
 	"go.uber.org/zap"
 )
 
-type OTPService interface {
+type OTPServiceIntr interface {
 	CreateNewOTP(user *ent.User) (*ent.OTP, error)
 }
 
-type OTPServiceImpl struct {
-	otpRepository OTPRepository
+type OTPService struct {
+	otpRepository *OTPRepository
 	config        *config.Config
 }
 
-func NewOTPService(otpRepository OTPRepository) *OTPServiceImpl {
-	return &OTPServiceImpl{
+func NewOTPService(otpRepository *OTPRepository) *OTPService {
+	return &OTPService{
 		otpRepository: otpRepository,
 		config:        config.GetConfig(),
 	}
 }
 
-func (s *OTPServiceImpl) CreateNewOTP(user *ent.User) (*ent.OTP, error) {
+func (s *OTPService) CreateNewOTP(user *ent.User) (*ent.OTP, error) {
 	otp, err := s.otpRepository.CreateNewOTP(context.Background(), user)
 
 	if err != nil {

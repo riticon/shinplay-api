@@ -23,7 +23,7 @@ func (User) Mixin() []ent.Mixin {
 // Fields of the User.
 func (User) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("auth_id").MaxLen(24).DefaultFunc(publicid.Must).NotEmpty().Unique(),
+		field.String("auth_id").DefaultFunc(publicid.Must).NotEmpty().Unique().MaxLen(24),
 		field.String("username").MaxLen(40).Optional().Unique(),
 		field.String("email").Optional().Unique(),
 		field.String("phone_number").Optional().Unique().MaxLen(15).MinLen(7),

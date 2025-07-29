@@ -7,28 +7,27 @@ import (
 	"github.com/shinplay/ent/user"
 )
 
-type UserRepository interface {
+type UserRepositoryIntr interface {
 	GetByPhoneNumber(ctx context.Context, phoneNumber string) (*ent.User, error)
 	CreateByPhoneNumber(ctx context.Context, phoneNumber string) (*ent.User, error)
 }
 
-type userRepository struct {
+type UserRepository struct {
 	client *ent.Client
 }
 
-func NewUserRepository(client *ent.Client) UserRepository {
-	return &userRepository{client: client}
+func NewUserRepository(client *ent.Client) *UserRepository {
+	return &UserRepository{client: client}
 }
 
 // CreateByPhoneNumber implements UserRepository.
-func (r *userRepository) CreateByPhoneNumber(ctx context.Context, phoneNumber string) (*ent.User, error) {
+func (r *UserRepository) CreateByPhoneNumber(ctx context.Context, phoneNumber string) (*ent.User, error) {
 	return r.client.User.Create().
 		SetPhoneNumber(phoneNumber).
-		SetAuthID(ent.User{}.AuthID).
 		Save(ctx)
 }
 
 // GetByPhoneNumber implements UserRepository.
-func (r *userRepository) GetByPhoneNumber(ctx context.Context, phoneNumber string) (*ent.User, error) {
+func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber string) (*ent.User, error) {
 	return r.client.User.Query().Where(user.PhoneNumberEQ(phoneNumber)).Only(ctx)
 }

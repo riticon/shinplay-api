@@ -16,41 +16,38 @@ type Token struct {
 	refreshToken string
 }
 
-type AuthService interface {
-	LoginOrSignupWithNumber(phoneNumber string, channel string) (token Token, err error)
-	LoginOrSignupWithEmail(email string, channel string) (token Token, err error)
+type AuthServiceIntr interface {
+	// LoginOrSignupWithNumber(phoneNumber string, channel string) (token Token, err error)
+	// LoginOrSignupWithEmail(email string, channel string) (token Token, err error)
 	SendWhatsAppOTP(phoneNumber string) error
 	GenerateOTP(phoneNumber string) (otp string, err error)
-	VerifyWhatsAppOTP(phoneNumber, otp string) (token Token, err error)
-	ValidateToken(token string) bool
-	RefreshToken(refreshToken string) (token Token, err error)
-	Logout(userId, sessionId string) error
+	// VerifyWhatsAppOTP(phoneNumber, otp string) (token Token, err error)
+	// ValidateToken(token string) bool
+	// RefreshToken(refreshToken string) (token Token, err error)
+	// Logout(userId, sessionId string) error
 }
 
-type AuthServiceImpl struct {
-	userService user.UserService
-	otpService  OTPService
+type AuthService struct {
+	userService *user.UserService
+	otpService  *OTPService
 	config      *config.Config
 }
 
-func NewAuthService(userService user.UserService, otpService OTPService) *AuthServiceImpl {
-	return &AuthServiceImpl{
+func NewAuthService(userService *user.UserService, otpService *OTPService, config *config.Config) *AuthService {
+	return &AuthService{
 		userService: userService,
 		otpService:  otpService,
-		config:      config.GetConfig(),
+		config:      config,
 	}
 }
 
-func SendSMSOTP(n *AuthService) {
-	config.GetConfig().Logger.Info("Sending OTP")
-}
-
-// func (s *AuthServiceImpl) SendWhatsAppOtp(phoneNumber string, channel string) error {}
-
-func (s *AuthServiceImpl) SendWhatsAppOTP(phoneNumber, otp string) error {
+func (s *AuthService) SendWhatsAppOTP(phoneNumber string) error {
+	s.config.Logger.Info("Sending WhatsApp OTP", zap.String("phoneNumber", phoneNumber))
 	url := "https://graph.facebook.com/v22.0/" + s.config.WhatsApp.PhoneId + "/messages"
 	token := s.config.WhatsApp.Token
 	otp, err := s.GenerateOTP(phoneNumber)
+
+	s.config.Logger.Info("Generated OTP", zap.String("otp", otp))
 
 	if err != nil {
 		return fmt.Errorf("error generating OTP: %w", err)
@@ -79,7 +76,7 @@ func (s *AuthServiceImpl) SendWhatsAppOTP(phoneNumber, otp string) error {
 					"sub_type": "url",
 					"index":    "0",
 					"parameters": []map[string]string{
-						{"type": "text", "text": "abc123"},
+						{"type": "text", "text": otp},
 					},
 				},
 			},
@@ -89,12 +86,14 @@ func (s *AuthServiceImpl) SendWhatsAppOTP(phoneNumber, otp string) error {
 	// Convert payload to JSON
 	jsonData, err := json.Marshal(payload)
 	if err != nil {
+		s.config.Logger.Error("Error marshalling payload", zap.Error(err))
 		return fmt.Errorf("error marshalling payload: %w", err)
 	}
 
 	// Create HTTP request
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
+		s.config.Logger.Error("Error creating request", zap.Error(err))
 		return fmt.Errorf("error creating request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
@@ -104,6 +103,7 @@ func (s *AuthServiceImpl) SendWhatsAppOTP(phoneNumber, otp string) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
+		s.config.Logger.Error("Error sending request", zap.Error(err))
 		return fmt.Errorf("error sending request: %w", err)
 	}
 	defer resp.Body.Close()
@@ -116,13 +116,14 @@ func (s *AuthServiceImpl) SendWhatsAppOTP(phoneNumber, otp string) error {
 	fmt.Println("Response:", buf.String())
 
 	if resp.StatusCode >= 400 {
+		s.config.Logger.Error("Received error status from WhatsApp API", zap.String("status", resp.Status))
 		return fmt.Errorf("received error status: %s", resp.Status)
 	}
 
 	return nil
 }
 
-func (s *AuthServiceImpl) GenerateOTP(phoneNumber string) (string, error) {
+func (s *AuthService) GenerateOTP(phoneNumber string) (string, error) {
 	s.config.Logger.Info("Generating OTP for phone number", zap.String("phoneNumber", phoneNumber))
 
 	// Find if user with phoneNumber exists
@@ -130,6 +131,7 @@ func (s *AuthServiceImpl) GenerateOTP(phoneNumber string) (string, error) {
 	// and return the OTP
 	user, err := s.userService.FindOrCreateByPhone(phoneNumber)
 	if err != nil {
+		s.config.Logger.Error("Failed to find or create user", zap.Error(err))
 		return "", fmt.Errorf("error finding or creating user: %w", err)
 	}
 
@@ -138,6 +140,8 @@ func (s *AuthServiceImpl) GenerateOTP(phoneNumber string) (string, error) {
 		s.config.Logger.Error("Failed to create new OTP", zap.Error(err))
 		return "", fmt.Errorf("error creating OTP: %w", err)
 	}
+
+	s.config.Logger.Info("OTP created successfully", zap.String("otp", otp.Otp))
 
 	return otp.Otp, nil
 }

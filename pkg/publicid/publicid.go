@@ -7,12 +7,14 @@ import (
 
 	nanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/pkg/errors"
+	"github.com/shinplay/internal/config"
+	"go.uber.org/zap"
 )
 
 // Fixed nanoid parameters used in the Rails application.
 const (
 	alphabet = "0123456789abcdefghijklmnopqrstuvwxyz"
-	length   = 12
+	length   = 24
 )
 
 func Numberic() string {
@@ -21,7 +23,14 @@ func Numberic() string {
 
 // New generates a unique public ID.
 func New() (string, error) {
-	return nanoid.Generate(alphabet, length)
+	config.GetConfig().Logger.Info("Generating new public ID")
+	nanoidID, err := nanoid.Generate(alphabet, length)
+
+	if err != nil {
+		config.GetConfig().Logger.Error("Failed to generate public ID", zap.Error(err))
+		return "", errors.Wrap(err, "failed to generate public ID")
+	}
+	return nanoidID, nil
 }
 
 // Must is the same as New, but panics on error.

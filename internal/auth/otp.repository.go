@@ -6,20 +6,20 @@ import (
 	"github.com/shinplay/ent"
 )
 
-type OTPRepository interface {
+type OTPRepositoryIntr interface {
 	CreateNewOTP(ctx context.Context, user *ent.User) (*ent.OTP, error)
 }
 
-type otpRepository struct {
+type OTPRepository struct {
 	client *ent.Client
 }
 
-func NewOTPRepository(client *ent.Client) OTPRepository {
-	return &otpRepository{client: client}
+func NewOTPRepository(client *ent.Client) *OTPRepository {
+	return &OTPRepository{client: client}
 }
 
 // CreateNewOTP implements OTPRepository.
-func (o *otpRepository) CreateNewOTP(ctx context.Context, user *ent.User) (*ent.OTP, error) {
+func (o *OTPRepository) CreateNewOTP(ctx context.Context, user *ent.User) (*ent.OTP, error) {
 	return o.client.OTP.Create().
 		SetUser(user).
 		Save(ctx)
