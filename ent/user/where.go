@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/shinplay/ent/predicate"
 )
 
@@ -612,6 +613,29 @@ func LastNameEqualFold(v string) predicate.User {
 // LastNameContainsFold applies the ContainsFold predicate on the "last_name" field.
 func LastNameContainsFold(v string) predicate.User {
 	return predicate.User(sql.FieldContainsFold(FieldLastName, v))
+}
+
+// HasOtps applies the HasEdge predicate on the "otps" edge.
+func HasOtps() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OtpsTable, OtpsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOtpsWith applies the HasEdge predicate on the "otps" edge with a given conditions (other predicates).
+func HasOtpsWith(preds ...predicate.OTP) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newOtpsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

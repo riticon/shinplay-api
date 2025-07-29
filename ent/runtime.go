@@ -5,6 +5,7 @@ package ent
 import (
 	"time"
 
+	"github.com/shinplay/ent/otp"
 	"github.com/shinplay/ent/schema"
 	"github.com/shinplay/ent/user"
 )
@@ -13,6 +14,32 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	otpFields := schema.OTP{}.Fields()
+	_ = otpFields
+	// otpDescOtp is the schema descriptor for otp field.
+	otpDescOtp := otpFields[0].Descriptor()
+	// otp.DefaultOtp holds the default value on creation for the otp field.
+	otp.DefaultOtp = otpDescOtp.Default.(func() string)
+	// otp.OtpValidator is a validator for the "otp" field. It is called by the builders before save.
+	otp.OtpValidator = func() func(string) error {
+		validators := otpDescOtp.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(otp string) error {
+			for _, fn := range fns {
+				if err := fn(otp); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// otpDescExpiresAt is the schema descriptor for expires_at field.
+	otpDescExpiresAt := otpFields[1].Descriptor()
+	// otp.DefaultExpiresAt holds the default value on creation for the expires_at field.
+	otp.DefaultExpiresAt = otpDescExpiresAt.Default.(time.Time)
 	userMixin := schema.User{}.Mixin()
 	userMixinFields0 := userMixin[0].Fields()
 	_ = userMixinFields0

@@ -29,12 +29,14 @@ type AuthService interface {
 
 type AuthServiceImpl struct {
 	userService user.UserService
+	otpService  OTPService
 	config      *config.Config
 }
 
-func NewAuthService() *AuthServiceImpl {
+func NewAuthService(userService user.UserService, otpService OTPService) *AuthServiceImpl {
 	return &AuthServiceImpl{
-		userService: user.NewUserService(),
+		userService: userService,
+		otpService:  otpService,
 		config:      config.GetConfig(),
 	}
 }
@@ -121,18 +123,21 @@ func (s *AuthServiceImpl) SendWhatsAppOTP(phoneNumber, otp string) error {
 }
 
 func (s *AuthServiceImpl) GenerateOTP(phoneNumber string) (string, error) {
-	// Generate a random OTP (for simplicity, using a static value here)
+	s.config.Logger.Info("Generating OTP for phone number", zap.String("phoneNumber", phoneNumber))
 
 	// Find if user with phoneNumber exists
 	// If not, create a new user with the phoneNumber
-	// and return the OTPW
+	// and return the OTP
 	user, err := s.userService.FindOrCreateByPhone(phoneNumber)
 	if err != nil {
 		return "", fmt.Errorf("error finding or creating user: %w", err)
 	}
 
-	s.config.Logger.Info("User found or created", zap.Int("user_id", user.ID))
+	otp, err := s.otpService.CreateNewOTP(user)
+	if err != nil {
+		s.config.Logger.Error("Failed to create new OTP", zap.Error(err))
+		return "", fmt.Errorf("error creating OTP: %w", err)
+	}
 
-	otp := "123456"
-	return otp, nil
+	return otp.Otp, nil
 }

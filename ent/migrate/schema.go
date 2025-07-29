@@ -8,6 +8,27 @@ import (
 )
 
 var (
+	// OtPsColumns holds the columns for the "ot_ps" table.
+	OtPsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "otp", Type: field.TypeString, Unique: true, Size: 6},
+		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "user_id", Type: field.TypeInt},
+	}
+	// OtPsTable holds the schema information for the "ot_ps" table.
+	OtPsTable = &schema.Table{
+		Name:       "ot_ps",
+		Columns:    OtPsColumns,
+		PrimaryKey: []*schema.Column{OtPsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "ot_ps_users_otps",
+				Columns:    []*schema.Column{OtPsColumns[3]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -28,9 +49,11 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		OtPsTable,
 		UsersTable,
 	}
 )
 
 func init() {
+	OtPsTable.ForeignKeys[0].RefTable = UsersTable
 }

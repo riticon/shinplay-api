@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/shinplay/ent/otp"
 	"github.com/shinplay/ent/predicate"
 	"github.com/shinplay/ent/user"
 )
@@ -148,9 +149,45 @@ func (uu *UserUpdate) ClearLastName() *UserUpdate {
 	return uu
 }
 
+// AddOtpIDs adds the "otps" edge to the OTP entity by IDs.
+func (uu *UserUpdate) AddOtpIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddOtpIDs(ids...)
+	return uu
+}
+
+// AddOtps adds the "otps" edges to the OTP entity.
+func (uu *UserUpdate) AddOtps(o ...*OTP) *UserUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return uu.AddOtpIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
+}
+
+// ClearOtps clears all "otps" edges to the OTP entity.
+func (uu *UserUpdate) ClearOtps() *UserUpdate {
+	uu.mutation.ClearOtps()
+	return uu
+}
+
+// RemoveOtpIDs removes the "otps" edge to OTP entities by IDs.
+func (uu *UserUpdate) RemoveOtpIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveOtpIDs(ids...)
+	return uu
+}
+
+// RemoveOtps removes "otps" edges to OTP entities.
+func (uu *UserUpdate) RemoveOtps(o ...*OTP) *UserUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return uu.RemoveOtpIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -256,6 +293,51 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if uu.mutation.LastNameCleared() {
 		_spec.ClearField(user.FieldLastName, field.TypeString)
+	}
+	if uu.mutation.OtpsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.OtpsTable,
+			Columns: []string{user.OtpsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(otp.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedOtpsIDs(); len(nodes) > 0 && !uu.mutation.OtpsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.OtpsTable,
+			Columns: []string{user.OtpsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(otp.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.OtpsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.OtpsTable,
+			Columns: []string{user.OtpsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(otp.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -397,9 +479,45 @@ func (uuo *UserUpdateOne) ClearLastName() *UserUpdateOne {
 	return uuo
 }
 
+// AddOtpIDs adds the "otps" edge to the OTP entity by IDs.
+func (uuo *UserUpdateOne) AddOtpIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddOtpIDs(ids...)
+	return uuo
+}
+
+// AddOtps adds the "otps" edges to the OTP entity.
+func (uuo *UserUpdateOne) AddOtps(o ...*OTP) *UserUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return uuo.AddOtpIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
+}
+
+// ClearOtps clears all "otps" edges to the OTP entity.
+func (uuo *UserUpdateOne) ClearOtps() *UserUpdateOne {
+	uuo.mutation.ClearOtps()
+	return uuo
+}
+
+// RemoveOtpIDs removes the "otps" edge to OTP entities by IDs.
+func (uuo *UserUpdateOne) RemoveOtpIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveOtpIDs(ids...)
+	return uuo
+}
+
+// RemoveOtps removes "otps" edges to OTP entities.
+func (uuo *UserUpdateOne) RemoveOtps(o ...*OTP) *UserUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return uuo.RemoveOtpIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -535,6 +653,51 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if uuo.mutation.LastNameCleared() {
 		_spec.ClearField(user.FieldLastName, field.TypeString)
+	}
+	if uuo.mutation.OtpsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.OtpsTable,
+			Columns: []string{user.OtpsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(otp.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedOtpsIDs(); len(nodes) > 0 && !uuo.mutation.OtpsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.OtpsTable,
+			Columns: []string{user.OtpsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(otp.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.OtpsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.OtpsTable,
+			Columns: []string{user.OtpsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(otp.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &User{config: uuo.config}
 	_spec.Assign = _node.assignValues

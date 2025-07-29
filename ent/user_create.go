@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/shinplay/ent/otp"
 	"github.com/shinplay/ent/user"
 )
 
@@ -130,6 +131,21 @@ func (uc *UserCreate) SetNillableLastName(s *string) *UserCreate {
 		uc.SetLastName(*s)
 	}
 	return uc
+}
+
+// AddOtpIDs adds the "otps" edge to the OTP entity by IDs.
+func (uc *UserCreate) AddOtpIDs(ids ...int) *UserCreate {
+	uc.mutation.AddOtpIDs(ids...)
+	return uc
+}
+
+// AddOtps adds the "otps" edges to the OTP entity.
+func (uc *UserCreate) AddOtps(o ...*OTP) *UserCreate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return uc.AddOtpIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -264,6 +280,22 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.LastName(); ok {
 		_spec.SetField(user.FieldLastName, field.TypeString, value)
 		_node.LastName = value
+	}
+	if nodes := uc.mutation.OtpsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.OtpsTable,
+			Columns: []string{user.OtpsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(otp.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

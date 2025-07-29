@@ -10,6 +10,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
+	go.uber.org/dig v1.19.0
 	go.uber.org/zap v1.27.0
 )
 

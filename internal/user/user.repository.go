@@ -16,8 +16,8 @@ type userRepository struct {
 	client *ent.Client
 }
 
-func NewUserRepository() UserRepository {
-	return &userRepository{client: ent.NewClient()}
+func NewUserRepository(client *ent.Client) UserRepository {
+	return &userRepository{client: client}
 }
 
 // CreateByPhoneNumber implements UserRepository.

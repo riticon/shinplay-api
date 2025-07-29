@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -29,8 +30,17 @@ const (
 	FieldFirstName = "first_name"
 	// FieldLastName holds the string denoting the last_name field in the database.
 	FieldLastName = "last_name"
+	// EdgeOtps holds the string denoting the otps edge name in mutations.
+	EdgeOtps = "otps"
 	// Table holds the table name of the user in the database.
 	Table = "users"
+	// OtpsTable is the table that holds the otps relation/edge.
+	OtpsTable = "ot_ps"
+	// OtpsInverseTable is the table name for the OTP entity.
+	// It exists in this package in order to avoid circular dependency with the "otp" package.
+	OtpsInverseTable = "ot_ps"
+	// OtpsColumn is the table column denoting the otps relation/edge.
+	OtpsColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -119,4 +129,25 @@ func ByFirstName(opts ...sql.OrderTermOption) OrderOption {
 // ByLastName orders the results by the last_name field.
 func ByLastName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastName, opts...).ToFunc()
+}
+
+// ByOtpsCount orders the results by otps count.
+func ByOtpsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOtpsStep(), opts...)
+	}
+}
+
+// ByOtps orders the results by otps terms.
+func ByOtps(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOtpsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newOtpsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OtpsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, OtpsTable, OtpsColumn),
+	)
 }

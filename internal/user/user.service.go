@@ -5,6 +5,7 @@ import (
 
 	"github.com/shinplay/ent"
 	"github.com/shinplay/internal/config"
+	"go.uber.org/zap"
 )
 
 type UserService interface {
@@ -18,14 +19,15 @@ type UserServiceImpl struct {
 }
 
 // NewUserService creates a new UserService instance.
-func NewUserService() *UserServiceImpl {
+func NewUserService(userRepository UserRepository) *UserServiceImpl {
 	return &UserServiceImpl{
-		userRepository: NewUserRepository(),
+		userRepository: userRepository,
 		config:         config.GetConfig(),
 	}
 }
 
 func (s *UserServiceImpl) FindOrCreateByPhone(phoneNumber string) (*ent.User, error) {
+	s.config.Logger.Info("Finding or creating user by phone number", zap.String("phoneNumber", phoneNumber))
 	user, err := s.userRepository.GetByPhoneNumber(context.Background(), phoneNumber)
 
 	if err != nil {

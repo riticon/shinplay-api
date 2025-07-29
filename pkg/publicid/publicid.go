@@ -15,11 +15,26 @@ const (
 	length   = 12
 )
 
+func Numberic() string {
+	return "0123456789"
+}
+
 // New generates a unique public ID.
-func New() (string, error) { return nanoid.Generate(alphabet, length) }
+func New() (string, error) {
+	return nanoid.Generate(alphabet, length)
+}
 
 // Must is the same as New, but panics on error.
-func Must() string { return nanoid.MustGenerate(alphabet, length) }
+func Must() string {
+	return nanoid.MustGenerate(alphabet, length)
+}
+
+func MustWith(length int, alphabet string) string {
+	if length <= 0 {
+		panic("length must be greater than 0")
+	}
+	return nanoid.MustGenerate(alphabet, length)
+}
 
 // Validate checks if a given field name’s public ID value is valid according to
 // the constraints defined by package publicid.

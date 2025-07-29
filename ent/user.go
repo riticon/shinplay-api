@@ -32,8 +32,29 @@ type User struct {
 	// FirstName holds the value of the "first_name" field.
 	FirstName string `json:"first_name,omitempty"`
 	// LastName holds the value of the "last_name" field.
-	LastName     string `json:"last_name,omitempty"`
+	LastName string `json:"last_name,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the UserQuery when eager-loading is set.
+	Edges        UserEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// UserEdges holds the relations/edges for other nodes in the graph.
+type UserEdges struct {
+	// Otps holds the value of the otps edge.
+	Otps []*OTP `json:"otps,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// OtpsOrErr returns the Otps value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) OtpsOrErr() ([]*OTP, error) {
+	if e.loadedTypes[0] {
+		return e.Otps, nil
+	}
+	return nil, &NotLoadedError{edge: "otps"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -127,6 +148,11 @@ func (u *User) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (u *User) Value(name string) (ent.Value, error) {
 	return u.selectValues.Get(name)
+}
+
+// QueryOtps queries the "otps" edge of the User entity.
+func (u *User) QueryOtps() *OTPQuery {
+	return NewUserClient(u.config).QueryOtps(u)
 }
 
 // Update returns a builder for updating this User.
