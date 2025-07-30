@@ -50,7 +50,7 @@ func main() {
 	}))
 
 	app.Use(cors.New(cors.Config{ // CORS configuration
-		AllowOrigins:     "http://localhost:3000", // Explicitly allow development origin
+		AllowOrigins:     cnf.Server.CORS, // Explicitly allow development origin
 		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, X-Request-ID",
 		ExposeHeaders:    "Content-Length, Content-Type",
