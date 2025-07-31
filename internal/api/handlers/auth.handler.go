@@ -3,15 +3,18 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/shinplay/internal/auth"
+	"github.com/shinplay/internal/config"
 )
 
 type AuthHandler struct {
 	authService *auth.AuthService
+	config      *config.Config
 }
 
-func NewAuthHandler(authService *auth.AuthService) *AuthHandler {
+func NewAuthHandler(authService *auth.AuthService, config *config.Config) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
+		config:      config,
 	}
 }
 
@@ -54,16 +57,9 @@ func (h *AuthHandler) VerifyWhatsAppOTP(ctx *fiber.Ctx) error {
 		})
 	}
 
-	verified, err := h.authService.VerifyWhatsAppOTP(body.PhoneNumber, body.Otp)
+	token, err := h.authService.VerifyWhatsAppOTP(body.PhoneNumber, body.Otp)
 
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"status":  "error",
-			"message": "Failed to verify OTP",
-		})
-	}
-
-	if !verified {
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Invalid OTP or OTP expired",
@@ -74,6 +70,9 @@ func (h *AuthHandler) VerifyWhatsAppOTP(ctx *fiber.Ctx) error {
 		Status(fiber.StatusOK).
 		JSON(fiber.Map{
 			"status":  "success",
-			"message": "WhatsApp OTP verified successfully",
+			"message": "OTP verified successfully",
+			"data": fiber.Map{
+				"token": token,
+			},
 		})
 }

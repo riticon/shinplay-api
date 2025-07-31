@@ -12,8 +12,8 @@ import (
 )
 
 type Token struct {
-	accessToken  string
-	refreshToken string
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 type AuthServiceIntr interface {
@@ -22,6 +22,7 @@ type AuthServiceIntr interface {
 	SendWhatsAppOTP(phoneNumber string) error
 	GenerateOTP(phoneNumber string) (otp string, err error)
 	VerifyWhatsAppOTP(phoneNumber, otp string) (bool, error)
+	GenerateAuthToken(userId int) (token Token, err error)
 	// ValidateToken(token string) bool
 	// RefreshToken(refreshToken string) (token Token, err error)
 	// Logout(userId, sessionId string) error
@@ -39,6 +40,18 @@ func NewAuthService(userService *user.UserService, otpService *OTPService, confi
 		otpService:  otpService,
 		config:      config,
 	}
+}
+
+func (s *AuthService) GenerateAuthToken(userId int) (token Token, err error) {
+	s.config.Logger.Info("Generating auth token for user", zap.Int("userId", userId))
+	// This is a placeholder for actual token generation logic
+	// In a real application, you would use a library to create a JWT or similar token
+	token = Token{
+		AccessToken:  "access_token_placeholder",
+		RefreshToken: "refresh_token_placeholder",
+	}
+
+	return token, nil
 }
 
 func (s *AuthService) SendWhatsAppOTP(phoneNumber string) error {
@@ -146,29 +159,32 @@ func (s *AuthService) GenerateOTP(phoneNumber string) (string, error) {
 	return otp.Otp, nil
 }
 
-func (s *AuthService) VerifyWhatsAppOTP(phoneNumber string, otp string) (verified bool, err error) {
+func (s *AuthService) VerifyWhatsAppOTP(phoneNumber string, otp string) (Token, error) {
 	s.config.Logger.Info("Verifying WhatsApp OTP", zap.String("phoneNumber", phoneNumber), zap.String("otp", otp))
 
 	// Find user by phone number
 	user, err := s.userService.FindByPhone(phoneNumber)
 	if err != nil {
 		s.config.Logger.Info("Failed to find user", zap.Error(err))
-		return false, fmt.Errorf("error finding user: %w", err)
+		return Token{}, fmt.Errorf("error finding user: %w", err)
 	}
 
 	// Check if OTP is valid
 	is_valid, err := s.otpService.IsOTPValid(otp, user)
 	if err != nil {
 		s.config.Logger.Info("Failed to find OTP", zap.Error(err))
-		return false, fmt.Errorf("error finding OTP: %w", err)
+		return Token{}, fmt.Errorf("error finding OTP: %w", err)
 	}
 
 	if !is_valid {
-		return false, nil
+		return Token{}, nil
 	}
 
 	// Expire the OTP
 	s.otpService.ExpireOtp(otp, user)
 
-	return true, nil
+	token, err := s.GenerateAuthToken(user.ID)
+
+	s.config.Logger.Info("OTP is valid, generating tokens: ", zap.Any("token", token))
+	return token, err
 }

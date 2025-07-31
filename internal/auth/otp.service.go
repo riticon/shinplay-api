@@ -55,16 +55,18 @@ func (s *OTPService) IsOTPValid(otpCode string, user *ent.User) (bool, error) {
 	return true, nil
 }
 
-func (s *OTPService) ExpireOtp(otpCode string, user *ent.User) (int, error) {
+func (s *OTPService) ExpireOtp(otpCode string, user *ent.User) (bool, error) {
 	s.config.Logger.Info("Expiring OTP", zap.String("otpCode", otpCode), zap.Int("userId", user.ID))
 
-	deletedCount, err := s.otpRepository.DeleteOTP(context.Background(), otpCode, user)
+	deletedId, err := s.otpRepository.DeleteOTP(context.Background(), otpCode, user)
+
+	s.config.Logger.Info("OTP is used - Deleting", zap.Int("deletedId", deletedId))
 
 	if err != nil {
 		s.config.Logger.Error("Failed to delete OTP", zap.Error(err))
-		return 0, err
+		return false, err
 	}
 
-	s.config.Logger.Info("OTP deleted successfully", zap.Int("deletedCount", deletedCount))
-	return deletedCount, nil
+	s.config.Logger.Info("OTP deleted successfully", zap.Int("deletedId", deletedId))
+	return true, nil
 }
