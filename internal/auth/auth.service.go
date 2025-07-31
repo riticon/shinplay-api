@@ -21,7 +21,7 @@ type AuthServiceIntr interface {
 	// LoginOrSignupWithEmail(email string, channel string) (token Token, err error)
 	SendWhatsAppOTP(phoneNumber string) error
 	GenerateOTP(phoneNumber string) (otp string, err error)
-	// VerifyWhatsAppOTP(phoneNumber, otp string) (token Token, err error)
+	VerifyWhatsAppOTP(phoneNumber, otp string) (bool, error)
 	// ValidateToken(token string) bool
 	// RefreshToken(refreshToken string) (token Token, err error)
 	// Logout(userId, sessionId string) error
@@ -144,4 +144,31 @@ func (s *AuthService) GenerateOTP(phoneNumber string) (string, error) {
 	s.config.Logger.Info("OTP created successfully", zap.String("otp", otp.Otp))
 
 	return otp.Otp, nil
+}
+
+func (s *AuthService) VerifyWhatsAppOTP(phoneNumber string, otp string) (verified bool, err error) {
+	s.config.Logger.Info("Verifying WhatsApp OTP", zap.String("phoneNumber", phoneNumber), zap.String("otp", otp))
+
+	// Find user by phone number
+	user, err := s.userService.FindByPhone(phoneNumber)
+	if err != nil {
+		s.config.Logger.Info("Failed to find user", zap.Error(err))
+		return false, fmt.Errorf("error finding user: %w", err)
+	}
+
+	// Check if OTP is valid
+	is_valid, err := s.otpService.IsOTPValid(otp, user)
+	if err != nil {
+		s.config.Logger.Info("Failed to find OTP", zap.Error(err))
+		return false, fmt.Errorf("error finding OTP: %w", err)
+	}
+
+	if !is_valid {
+		return false, nil
+	}
+
+	// Expire the OTP
+	s.otpService.ExpireOtp(otp, user)
+
+	return true, nil
 }

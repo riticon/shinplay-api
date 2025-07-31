@@ -5,6 +5,8 @@ import (
 
 	"github.com/shinplay/ent"
 	"github.com/shinplay/ent/user"
+	"github.com/shinplay/internal/config"
+	"go.uber.org/zap"
 )
 
 type UserRepositoryIntr interface {
@@ -29,5 +31,6 @@ func (r *UserRepository) CreateByPhoneNumber(ctx context.Context, phoneNumber st
 
 // GetByPhoneNumber implements UserRepository.
 func (r *UserRepository) GetByPhoneNumber(ctx context.Context, phoneNumber string) (*ent.User, error) {
+	config.GetConfig().Logger.Info("Getting user by phone number", zap.String("phoneNumber", phoneNumber))
 	return r.client.User.Query().Where(user.PhoneNumberEQ(phoneNumber)).Only(ctx)
 }

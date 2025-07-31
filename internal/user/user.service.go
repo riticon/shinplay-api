@@ -10,6 +10,7 @@ import (
 
 type UserServiceIntr interface {
 	FindOrCreateByPhone(phoneNumber string) (*ent.User, error)
+	FindByPhone(phoneNumber string) (*ent.User, error)
 }
 
 // UserService provides methods to manage user-related operations.
@@ -45,5 +46,17 @@ func (s *UserService) FindOrCreateByPhone(phoneNumber string) (*ent.User, error)
 		}
 	}
 
+	return user, nil
+}
+
+func (s *UserService) FindByPhone(phoneNumber string) (*ent.User, error) {
+	s.config.Logger.Info("Finding user by phone number", zap.String("phoneNumber", phoneNumber))
+	user, err := s.userRepository.GetByPhoneNumber(context.Background(), phoneNumber)
+	if err != nil {
+		s.config.Logger.Error("Failed to get user by phone number", zap.Error(err))
+		return nil, err
+	}
+
+	s.config.Logger.Info("User found", zap.Any("user", user))
 	return user, nil
 }

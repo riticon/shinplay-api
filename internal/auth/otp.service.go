@@ -10,6 +10,7 @@ import (
 
 type OTPServiceIntr interface {
 	CreateNewOTP(user *ent.User) (*ent.OTP, error)
+	IsOTPValid(otp string, user *ent.User) (bool, error)
 }
 
 type OTPService struct {
@@ -33,4 +34,37 @@ func (s *OTPService) CreateNewOTP(user *ent.User) (*ent.OTP, error) {
 	}
 
 	return otp, nil
+}
+
+func (s *OTPService) IsOTPValid(otpCode string, user *ent.User) (bool, error) {
+	s.config.Logger.Info("Validating OTP", zap.String("otpCode", otpCode), zap.Int("userId", user.ID))
+
+	otp, err := s.otpRepository.FindOTPByUser(context.Background(), otpCode, user)
+
+	if err != nil {
+		s.config.Logger.Debug("Failed to find OTP for user", zap.Error(err))
+		return false, err
+	}
+
+	if otp == nil {
+		s.config.Logger.Info("No OTP found for user", zap.Int("userId", user.ID))
+		return false, nil
+	}
+
+	s.config.Logger.Info("OTP found for user", zap.Int("userId", user.ID), zap.String("otpCode", otp.Otp))
+	return true, nil
+}
+
+func (s *OTPService) ExpireOtp(otpCode string, user *ent.User) (int, error) {
+	s.config.Logger.Info("Expiring OTP", zap.String("otpCode", otpCode), zap.Int("userId", user.ID))
+
+	deletedCount, err := s.otpRepository.DeleteOTP(context.Background(), otpCode, user)
+
+	if err != nil {
+		s.config.Logger.Error("Failed to delete OTP", zap.Error(err))
+		return 0, err
+	}
+
+	s.config.Logger.Info("OTP deleted successfully", zap.Int("deletedCount", deletedCount))
+	return deletedCount, nil
 }
