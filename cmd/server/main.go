@@ -68,12 +68,7 @@ func main() {
 		},
 	}))
 
-	app.Get("/", func(ctx *fiber.Ctx) error {
-		return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
-			"status":  "success",
-			"message": "API is running",
-		})
-	})
+	app.Get("/health", handlers.HealthCheck)
 
 	// all the routes goes here
 	err := container.Invoke(func(r handlers.Routes) {
@@ -90,5 +85,4 @@ func main() {
 	cnf.Logger.Info("Starting Shinplay API...")
 
 	app.Listen(":" + cnf.Server.Port)
-
 }
