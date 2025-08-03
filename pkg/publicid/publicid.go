@@ -21,6 +21,10 @@ func Numberic() string {
 	return "0123456789"
 }
 
+func AlphaNumeric() string {
+	return "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+}
+
 // New generates a unique public ID.
 func New() (string, error) {
 	config.GetConfig().Logger.Info("Generating new public ID")
