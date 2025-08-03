@@ -10,9 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func InitializeDatabase() *ent.Client {
-	config := config.GetConfig()
-
+func InitializeDatabase(config *config.Config) *ent.Client {
 	config.Logger.Info("Initializing PostgreSQL database connection")
 
 	client, err := ent.Open(
@@ -33,23 +31,11 @@ func InitializeDatabase() *ent.Client {
 		config.Logger.Fatal("failed creating schema resources: %v", zap.Error(err))
 	}
 
-	// defer client.Close()
-
-	users, err := client.User.Query().All(context.Background())
-
 	if err != nil {
 		config.Logger.Fatal("failed to query users: %v", zap.Error(err))
 	}
 
-	if len(users) == 0 {
-		config.Logger.Info("No users found in the database")
-	}
-
-	for _, user := range users {
-		config.Logger.Info("User found %s", zap.Int("id", user.ID), zap.String("phone", user.PhoneNumber))
-	}
-
-	config.Logger.Info("PostgreSQL database connection established successfully :check_mark:")
+	config.Logger.Info("PostgreSQL database connection established successfully")
 
 	return client
 }
