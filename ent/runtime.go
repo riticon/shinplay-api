@@ -7,6 +7,7 @@ import (
 
 	"github.com/shinplay/ent/otp"
 	"github.com/shinplay/ent/schema"
+	"github.com/shinplay/ent/session"
 	"github.com/shinplay/ent/user"
 )
 
@@ -14,8 +15,23 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	otpMixin := schema.OTP{}.Mixin()
+	otpMixinFields0 := otpMixin[0].Fields()
+	_ = otpMixinFields0
+	otpMixinFields1 := otpMixin[1].Fields()
+	_ = otpMixinFields1
 	otpFields := schema.OTP{}.Fields()
 	_ = otpFields
+	// otpDescCreateTime is the schema descriptor for create_time field.
+	otpDescCreateTime := otpMixinFields0[0].Descriptor()
+	// otp.DefaultCreateTime holds the default value on creation for the create_time field.
+	otp.DefaultCreateTime = otpDescCreateTime.Default.(func() time.Time)
+	// otpDescUpdateTime is the schema descriptor for update_time field.
+	otpDescUpdateTime := otpMixinFields1[0].Descriptor()
+	// otp.DefaultUpdateTime holds the default value on creation for the update_time field.
+	otp.DefaultUpdateTime = otpDescUpdateTime.Default.(func() time.Time)
+	// otp.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	otp.UpdateDefaultUpdateTime = otpDescUpdateTime.UpdateDefault.(func() time.Time)
 	// otpDescOtp is the schema descriptor for otp field.
 	otpDescOtp := otpFields[0].Descriptor()
 	// otp.DefaultOtp holds the default value on creation for the otp field.
@@ -40,6 +56,29 @@ func init() {
 	otpDescExpiresAt := otpFields[1].Descriptor()
 	// otp.DefaultExpiresAt holds the default value on creation for the expires_at field.
 	otp.DefaultExpiresAt = otpDescExpiresAt.Default.(time.Time)
+	sessionMixin := schema.Session{}.Mixin()
+	sessionMixinFields0 := sessionMixin[0].Fields()
+	_ = sessionMixinFields0
+	sessionMixinFields1 := sessionMixin[1].Fields()
+	_ = sessionMixinFields1
+	sessionFields := schema.Session{}.Fields()
+	_ = sessionFields
+	// sessionDescCreateTime is the schema descriptor for create_time field.
+	sessionDescCreateTime := sessionMixinFields0[0].Descriptor()
+	// session.DefaultCreateTime holds the default value on creation for the create_time field.
+	session.DefaultCreateTime = sessionDescCreateTime.Default.(func() time.Time)
+	// sessionDescUpdateTime is the schema descriptor for update_time field.
+	sessionDescUpdateTime := sessionMixinFields1[0].Descriptor()
+	// session.DefaultUpdateTime holds the default value on creation for the update_time field.
+	session.DefaultUpdateTime = sessionDescUpdateTime.Default.(func() time.Time)
+	// session.UpdateDefaultUpdateTime holds the default value on update for the update_time field.
+	session.UpdateDefaultUpdateTime = sessionDescUpdateTime.UpdateDefault.(func() time.Time)
+	// sessionDescSessionID is the schema descriptor for session_id field.
+	sessionDescSessionID := sessionFields[0].Descriptor()
+	// session.DefaultSessionID holds the default value on creation for the session_id field.
+	session.DefaultSessionID = sessionDescSessionID.Default.(func() string)
+	// session.SessionIDValidator is a validator for the "session_id" field. It is called by the builders before save.
+	session.SessionIDValidator = sessionDescSessionID.Validators[0].(func(string) error)
 	userMixin := schema.User{}.Mixin()
 	userMixinFields0 := userMixin[0].Fields()
 	_ = userMixinFields0
@@ -99,4 +138,8 @@ func init() {
 			return nil
 		}
 	}()
+	// userDescLoginCount is the schema descriptor for login_count field.
+	userDescLoginCount := userFields[6].Descriptor()
+	// user.DefaultLoginCount holds the default value on creation for the login_count field.
+	user.DefaultLoginCount = userDescLoginCount.Default.(int)
 }

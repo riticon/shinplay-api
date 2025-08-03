@@ -18,6 +18,10 @@ type OTP struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// CreateTime holds the value of the "create_time" field.
+	CreateTime time.Time `json:"create_time,omitempty"`
+	// UpdateTime holds the value of the "update_time" field.
+	UpdateTime time.Time `json:"update_time,omitempty"`
 	// Otp holds the value of the "otp" field.
 	Otp string `json:"otp,omitempty"`
 	// ExpiresAt holds the value of the "expires_at" field.
@@ -25,7 +29,7 @@ type OTP struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OTPQuery when eager-loading is set.
 	Edges        OTPEdges `json:"edges"`
-	user_id      *int
+	user_otps    *int
 	selectValues sql.SelectValues
 }
 
@@ -58,9 +62,9 @@ func (*OTP) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case otp.FieldOtp:
 			values[i] = new(sql.NullString)
-		case otp.FieldExpiresAt:
+		case otp.FieldCreateTime, otp.FieldUpdateTime, otp.FieldExpiresAt:
 			values[i] = new(sql.NullTime)
-		case otp.ForeignKeys[0]: // user_id
+		case otp.ForeignKeys[0]: // user_otps
 			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -83,6 +87,18 @@ func (o *OTP) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			o.ID = int(value.Int64)
+		case otp.FieldCreateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field create_time", values[i])
+			} else if value.Valid {
+				o.CreateTime = value.Time
+			}
+		case otp.FieldUpdateTime:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field update_time", values[i])
+			} else if value.Valid {
+				o.UpdateTime = value.Time
+			}
 		case otp.FieldOtp:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field otp", values[i])
@@ -97,10 +113,10 @@ func (o *OTP) assignValues(columns []string, values []any) error {
 			}
 		case otp.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field user_id", value)
+				return fmt.Errorf("unexpected type %T for edge-field user_otps", value)
 			} else if value.Valid {
-				o.user_id = new(int)
-				*o.user_id = int(value.Int64)
+				o.user_otps = new(int)
+				*o.user_otps = int(value.Int64)
 			}
 		default:
 			o.selectValues.Set(columns[i], values[i])
@@ -143,6 +159,12 @@ func (o *OTP) String() string {
 	var builder strings.Builder
 	builder.WriteString("OTP(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", o.ID))
+	builder.WriteString("create_time=")
+	builder.WriteString(o.CreateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("update_time=")
+	builder.WriteString(o.UpdateTime.Format(time.ANSIC))
+	builder.WriteString(", ")
 	builder.WriteString("otp=")
 	builder.WriteString(o.Otp)
 	builder.WriteString(", ")

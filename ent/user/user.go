@@ -30,17 +30,28 @@ const (
 	FieldFirstName = "first_name"
 	// FieldLastName holds the string denoting the last_name field in the database.
 	FieldLastName = "last_name"
+	// FieldLoginCount holds the string denoting the login_count field in the database.
+	FieldLoginCount = "login_count"
+	// EdgeSessions holds the string denoting the sessions edge name in mutations.
+	EdgeSessions = "sessions"
 	// EdgeOtps holds the string denoting the otps edge name in mutations.
 	EdgeOtps = "otps"
 	// Table holds the table name of the user in the database.
 	Table = "users"
+	// SessionsTable is the table that holds the sessions relation/edge.
+	SessionsTable = "sessions"
+	// SessionsInverseTable is the table name for the Session entity.
+	// It exists in this package in order to avoid circular dependency with the "session" package.
+	SessionsInverseTable = "sessions"
+	// SessionsColumn is the table column denoting the sessions relation/edge.
+	SessionsColumn = "user_sessions"
 	// OtpsTable is the table that holds the otps relation/edge.
-	OtpsTable = "ot_ps"
+	OtpsTable = "otps"
 	// OtpsInverseTable is the table name for the OTP entity.
 	// It exists in this package in order to avoid circular dependency with the "otp" package.
-	OtpsInverseTable = "ot_ps"
+	OtpsInverseTable = "otps"
 	// OtpsColumn is the table column denoting the otps relation/edge.
-	OtpsColumn = "user_id"
+	OtpsColumn = "user_otps"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -54,6 +65,7 @@ var Columns = []string{
 	FieldPhoneNumber,
 	FieldFirstName,
 	FieldLastName,
+	FieldLoginCount,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -81,6 +93,8 @@ var (
 	UsernameValidator func(string) error
 	// PhoneNumberValidator is a validator for the "phone_number" field. It is called by the builders before save.
 	PhoneNumberValidator func(string) error
+	// DefaultLoginCount holds the default value on creation for the "login_count" field.
+	DefaultLoginCount int
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -131,6 +145,25 @@ func ByLastName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastName, opts...).ToFunc()
 }
 
+// ByLoginCount orders the results by the login_count field.
+func ByLoginCount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLoginCount, opts...).ToFunc()
+}
+
+// BySessionsCount orders the results by sessions count.
+func BySessionsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newSessionsStep(), opts...)
+	}
+}
+
+// BySessions orders the results by sessions terms.
+func BySessions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSessionsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByOtpsCount orders the results by otps count.
 func ByOtpsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -143,6 +176,13 @@ func ByOtps(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newOtpsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
+}
+func newSessionsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SessionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, SessionsTable, SessionsColumn),
+	)
 }
 func newOtpsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

@@ -299,12 +299,12 @@ func (oq *OTPQuery) WithUser(opts ...func(*UserQuery)) *OTPQuery {
 // Example:
 //
 //	var v []struct {
-//		Otp string `json:"otp,omitempty"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.OTP.Query().
-//		GroupBy(otp.FieldOtp).
+//		GroupBy(otp.FieldCreateTime).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (oq *OTPQuery) GroupBy(field string, fields ...string) *OTPGroupBy {
@@ -322,11 +322,11 @@ func (oq *OTPQuery) GroupBy(field string, fields ...string) *OTPGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Otp string `json:"otp,omitempty"`
+//		CreateTime time.Time `json:"create_time,omitempty"`
 //	}
 //
 //	client.OTP.Query().
-//		Select(otp.FieldOtp).
+//		Select(otp.FieldCreateTime).
 //		Scan(ctx, &v)
 func (oq *OTPQuery) Select(fields ...string) *OTPSelect {
 	oq.ctx.Fields = append(oq.ctx.Fields, fields...)
@@ -413,10 +413,10 @@ func (oq *OTPQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*OTP
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*OTP)
 	for i := range nodes {
-		if nodes[i].user_id == nil {
+		if nodes[i].user_otps == nil {
 			continue
 		}
-		fk := *nodes[i].user_id
+		fk := *nodes[i].user_otps
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -433,7 +433,7 @@ func (oq *OTPQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*OTP
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "user_otps" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

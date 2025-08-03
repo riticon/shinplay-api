@@ -29,6 +29,12 @@ func (ou *OTPUpdate) Where(ps ...predicate.OTP) *OTPUpdate {
 	return ou
 }
 
+// SetUpdateTime sets the "update_time" field.
+func (ou *OTPUpdate) SetUpdateTime(t time.Time) *OTPUpdate {
+	ou.mutation.SetUpdateTime(t)
+	return ou
+}
+
 // SetOtp sets the "otp" field.
 func (ou *OTPUpdate) SetOtp(s string) *OTPUpdate {
 	ou.mutation.SetOtp(s)
@@ -81,6 +87,7 @@ func (ou *OTPUpdate) ClearUser() *OTPUpdate {
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (ou *OTPUpdate) Save(ctx context.Context) (int, error) {
+	ou.defaults()
 	return withHooks(ctx, ou.sqlSave, ou.mutation, ou.hooks)
 }
 
@@ -103,6 +110,14 @@ func (ou *OTPUpdate) Exec(ctx context.Context) error {
 func (ou *OTPUpdate) ExecX(ctx context.Context) {
 	if err := ou.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (ou *OTPUpdate) defaults() {
+	if _, ok := ou.mutation.UpdateTime(); !ok {
+		v := otp.UpdateDefaultUpdateTime()
+		ou.mutation.SetUpdateTime(v)
 	}
 }
 
@@ -130,6 +145,9 @@ func (ou *OTPUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := ou.mutation.UpdateTime(); ok {
+		_spec.SetField(otp.FieldUpdateTime, field.TypeTime, value)
 	}
 	if value, ok := ou.mutation.Otp(); ok {
 		_spec.SetField(otp.FieldOtp, field.TypeString, value)
@@ -184,6 +202,12 @@ type OTPUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *OTPMutation
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (ouo *OTPUpdateOne) SetUpdateTime(t time.Time) *OTPUpdateOne {
+	ouo.mutation.SetUpdateTime(t)
+	return ouo
 }
 
 // SetOtp sets the "otp" field.
@@ -251,6 +275,7 @@ func (ouo *OTPUpdateOne) Select(field string, fields ...string) *OTPUpdateOne {
 
 // Save executes the query and returns the updated OTP entity.
 func (ouo *OTPUpdateOne) Save(ctx context.Context) (*OTP, error) {
+	ouo.defaults()
 	return withHooks(ctx, ouo.sqlSave, ouo.mutation, ouo.hooks)
 }
 
@@ -273,6 +298,14 @@ func (ouo *OTPUpdateOne) Exec(ctx context.Context) error {
 func (ouo *OTPUpdateOne) ExecX(ctx context.Context) {
 	if err := ouo.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (ouo *OTPUpdateOne) defaults() {
+	if _, ok := ouo.mutation.UpdateTime(); !ok {
+		v := otp.UpdateDefaultUpdateTime()
+		ouo.mutation.SetUpdateTime(v)
 	}
 }
 
@@ -317,6 +350,9 @@ func (ouo *OTPUpdateOne) sqlSave(ctx context.Context) (_node *OTP, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := ouo.mutation.UpdateTime(); ok {
+		_spec.SetField(otp.FieldUpdateTime, field.TypeTime, value)
 	}
 	if value, ok := ouo.mutation.Otp(); ok {
 		_spec.SetField(otp.FieldOtp, field.TypeString, value)

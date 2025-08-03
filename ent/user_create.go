@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/shinplay/ent/otp"
+	"github.com/shinplay/ent/session"
 	"github.com/shinplay/ent/user"
 )
 
@@ -133,6 +134,35 @@ func (uc *UserCreate) SetNillableLastName(s *string) *UserCreate {
 	return uc
 }
 
+// SetLoginCount sets the "login_count" field.
+func (uc *UserCreate) SetLoginCount(i int) *UserCreate {
+	uc.mutation.SetLoginCount(i)
+	return uc
+}
+
+// SetNillableLoginCount sets the "login_count" field if the given value is not nil.
+func (uc *UserCreate) SetNillableLoginCount(i *int) *UserCreate {
+	if i != nil {
+		uc.SetLoginCount(*i)
+	}
+	return uc
+}
+
+// AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
+func (uc *UserCreate) AddSessionIDs(ids ...int) *UserCreate {
+	uc.mutation.AddSessionIDs(ids...)
+	return uc
+}
+
+// AddSessions adds the "sessions" edges to the Session entity.
+func (uc *UserCreate) AddSessions(s ...*Session) *UserCreate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uc.AddSessionIDs(ids...)
+}
+
 // AddOtpIDs adds the "otps" edge to the OTP entity by IDs.
 func (uc *UserCreate) AddOtpIDs(ids ...int) *UserCreate {
 	uc.mutation.AddOtpIDs(ids...)
@@ -195,6 +225,10 @@ func (uc *UserCreate) defaults() {
 		v := user.DefaultAuthID()
 		uc.mutation.SetAuthID(v)
 	}
+	if _, ok := uc.mutation.LoginCount(); !ok {
+		v := user.DefaultLoginCount
+		uc.mutation.SetLoginCount(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -222,6 +256,9 @@ func (uc *UserCreate) check() error {
 		if err := user.PhoneNumberValidator(v); err != nil {
 			return &ValidationError{Name: "phone_number", err: fmt.Errorf(`ent: validator failed for field "User.phone_number": %w`, err)}
 		}
+	}
+	if _, ok := uc.mutation.LoginCount(); !ok {
+		return &ValidationError{Name: "login_count", err: errors.New(`ent: missing required field "User.login_count"`)}
 	}
 	return nil
 }
@@ -280,6 +317,26 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.LastName(); ok {
 		_spec.SetField(user.FieldLastName, field.TypeString, value)
 		_node.LastName = value
+	}
+	if value, ok := uc.mutation.LoginCount(); ok {
+		_spec.SetField(user.FieldLoginCount, field.TypeInt, value)
+		_node.LoginCount = value
+	}
+	if nodes := uc.mutation.SessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SessionsTable,
+			Columns: []string{user.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := uc.mutation.OtpsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

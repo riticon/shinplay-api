@@ -21,6 +21,34 @@ type OTPCreate struct {
 	hooks    []Hook
 }
 
+// SetCreateTime sets the "create_time" field.
+func (oc *OTPCreate) SetCreateTime(t time.Time) *OTPCreate {
+	oc.mutation.SetCreateTime(t)
+	return oc
+}
+
+// SetNillableCreateTime sets the "create_time" field if the given value is not nil.
+func (oc *OTPCreate) SetNillableCreateTime(t *time.Time) *OTPCreate {
+	if t != nil {
+		oc.SetCreateTime(*t)
+	}
+	return oc
+}
+
+// SetUpdateTime sets the "update_time" field.
+func (oc *OTPCreate) SetUpdateTime(t time.Time) *OTPCreate {
+	oc.mutation.SetUpdateTime(t)
+	return oc
+}
+
+// SetNillableUpdateTime sets the "update_time" field if the given value is not nil.
+func (oc *OTPCreate) SetNillableUpdateTime(t *time.Time) *OTPCreate {
+	if t != nil {
+		oc.SetUpdateTime(*t)
+	}
+	return oc
+}
+
 // SetOtp sets the "otp" field.
 func (oc *OTPCreate) SetOtp(s string) *OTPCreate {
 	oc.mutation.SetOtp(s)
@@ -95,6 +123,14 @@ func (oc *OTPCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (oc *OTPCreate) defaults() {
+	if _, ok := oc.mutation.CreateTime(); !ok {
+		v := otp.DefaultCreateTime()
+		oc.mutation.SetCreateTime(v)
+	}
+	if _, ok := oc.mutation.UpdateTime(); !ok {
+		v := otp.DefaultUpdateTime()
+		oc.mutation.SetUpdateTime(v)
+	}
 	if _, ok := oc.mutation.Otp(); !ok {
 		v := otp.DefaultOtp()
 		oc.mutation.SetOtp(v)
@@ -107,6 +143,12 @@ func (oc *OTPCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (oc *OTPCreate) check() error {
+	if _, ok := oc.mutation.CreateTime(); !ok {
+		return &ValidationError{Name: "create_time", err: errors.New(`ent: missing required field "OTP.create_time"`)}
+	}
+	if _, ok := oc.mutation.UpdateTime(); !ok {
+		return &ValidationError{Name: "update_time", err: errors.New(`ent: missing required field "OTP.update_time"`)}
+	}
 	if _, ok := oc.mutation.Otp(); !ok {
 		return &ValidationError{Name: "otp", err: errors.New(`ent: missing required field "OTP.otp"`)}
 	}
@@ -147,6 +189,14 @@ func (oc *OTPCreate) createSpec() (*OTP, *sqlgraph.CreateSpec) {
 		_node = &OTP{config: oc.config}
 		_spec = sqlgraph.NewCreateSpec(otp.Table, sqlgraph.NewFieldSpec(otp.FieldID, field.TypeInt))
 	)
+	if value, ok := oc.mutation.CreateTime(); ok {
+		_spec.SetField(otp.FieldCreateTime, field.TypeTime, value)
+		_node.CreateTime = value
+	}
+	if value, ok := oc.mutation.UpdateTime(); ok {
+		_spec.SetField(otp.FieldUpdateTime, field.TypeTime, value)
+		_node.UpdateTime = value
+	}
 	if value, ok := oc.mutation.Otp(); ok {
 		_spec.SetField(otp.FieldOtp, field.TypeString, value)
 		_node.Otp = value
@@ -169,7 +219,7 @@ func (oc *OTPCreate) createSpec() (*OTP, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.user_id = &nodes[0]
+		_node.user_otps = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

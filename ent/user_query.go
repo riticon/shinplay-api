@@ -14,17 +14,19 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/shinplay/ent/otp"
 	"github.com/shinplay/ent/predicate"
+	"github.com/shinplay/ent/session"
 	"github.com/shinplay/ent/user"
 )
 
 // UserQuery is the builder for querying User entities.
 type UserQuery struct {
 	config
-	ctx        *QueryContext
-	order      []user.OrderOption
-	inters     []Interceptor
-	predicates []predicate.User
-	withOtps   *OTPQuery
+	ctx          *QueryContext
+	order        []user.OrderOption
+	inters       []Interceptor
+	predicates   []predicate.User
+	withSessions *SessionQuery
+	withOtps     *OTPQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -59,6 +61,28 @@ func (uq *UserQuery) Unique(unique bool) *UserQuery {
 func (uq *UserQuery) Order(o ...user.OrderOption) *UserQuery {
 	uq.order = append(uq.order, o...)
 	return uq
+}
+
+// QuerySessions chains the current query on the "sessions" edge.
+func (uq *UserQuery) QuerySessions() *SessionQuery {
+	query := (&SessionClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.SessionsTable, user.SessionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryOtps chains the current query on the "otps" edge.
@@ -270,16 +294,28 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:     uq.config,
-		ctx:        uq.ctx.Clone(),
-		order:      append([]user.OrderOption{}, uq.order...),
-		inters:     append([]Interceptor{}, uq.inters...),
-		predicates: append([]predicate.User{}, uq.predicates...),
-		withOtps:   uq.withOtps.Clone(),
+		config:       uq.config,
+		ctx:          uq.ctx.Clone(),
+		order:        append([]user.OrderOption{}, uq.order...),
+		inters:       append([]Interceptor{}, uq.inters...),
+		predicates:   append([]predicate.User{}, uq.predicates...),
+		withSessions: uq.withSessions.Clone(),
+		withOtps:     uq.withOtps.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
 	}
+}
+
+// WithSessions tells the query-builder to eager-load the nodes that are connected to
+// the "sessions" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithSessions(opts ...func(*SessionQuery)) *UserQuery {
+	query := (&SessionClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withSessions = query
+	return uq
 }
 
 // WithOtps tells the query-builder to eager-load the nodes that are connected to
@@ -371,7 +407,8 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
+			uq.withSessions != nil,
 			uq.withOtps != nil,
 		}
 	)
@@ -393,6 +430,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := uq.withSessions; query != nil {
+		if err := uq.loadSessions(ctx, query, nodes,
+			func(n *User) { n.Edges.Sessions = []*Session{} },
+			func(n *User, e *Session) { n.Edges.Sessions = append(n.Edges.Sessions, e) }); err != nil {
+			return nil, err
+		}
+	}
 	if query := uq.withOtps; query != nil {
 		if err := uq.loadOtps(ctx, query, nodes,
 			func(n *User) { n.Edges.Otps = []*OTP{} },
@@ -403,6 +447,37 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	return nodes, nil
 }
 
+func (uq *UserQuery) loadSessions(ctx context.Context, query *SessionQuery, nodes []*User, init func(*User), assign func(*User, *Session)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Session(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.SessionsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_sessions
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_sessions" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_sessions" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
 func (uq *UserQuery) loadOtps(ctx context.Context, query *OTPQuery, nodes []*User, init func(*User), assign func(*User, *OTP)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int]*User)
@@ -422,13 +497,13 @@ func (uq *UserQuery) loadOtps(ctx context.Context, query *OTPQuery, nodes []*Use
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.user_id
+		fk := n.user_otps
 		if fk == nil {
-			return fmt.Errorf(`foreign-key "user_id" is nil for node %v`, n.ID)
+			return fmt.Errorf(`foreign-key "user_otps" is nil for node %v`, n.ID)
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "user_otps" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
