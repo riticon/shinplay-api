@@ -31,6 +31,7 @@ type Config struct {
 	Database    DatabaseConfig
 	Server      ServerConfig
 	WhatsApp    WhatsAppConfig
+	JWTSecret   string
 	Logger      *zap.Logger
 }
 
@@ -49,6 +50,7 @@ func GetConfig() *Config {
 		instance = &Config{
 			Name:        "default",
 			Environment: env.Environment,
+			JWTSecret:   env.JWTSecret,
 			Database: DatabaseConfig{
 				Host:     env.DBHost,
 				User:     env.DBUser,

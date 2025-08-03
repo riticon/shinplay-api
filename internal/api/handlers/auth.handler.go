@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/shinplay/internal/auth"
 	"github.com/shinplay/internal/config"
+	"go.uber.org/zap"
 )
 
 type AuthHandler struct {
@@ -57,9 +58,10 @@ func (h *AuthHandler) VerifyWhatsAppOTP(ctx *fiber.Ctx) error {
 		})
 	}
 
-	token, err := h.authService.VerifyWhatsAppOTP(body.PhoneNumber, body.Otp)
+	token, userInfo, err := h.authService.VerifyWhatsAppOTP(body.PhoneNumber, body.Otp)
 
 	if err != nil {
+		h.config.Logger.Warn("Failed to verify WhatsApp OTP", zap.Error(err))
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Invalid OTP or OTP expired",
@@ -72,7 +74,8 @@ func (h *AuthHandler) VerifyWhatsAppOTP(ctx *fiber.Ctx) error {
 			"status":  "success",
 			"message": "OTP verified successfully",
 			"data": fiber.Map{
-				"token": token,
+				"access_token": token.AccessToken,
+				"user":         userInfo,
 			},
 		})
 }

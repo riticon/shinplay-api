@@ -27,6 +27,7 @@ type Env struct {
 	WhatsAppToken   string
 	WhatsAppPhoneId string
 	CORS            string
+	JWTSecret       string
 }
 
 // LoadEnv loads environment variables from a .env file.
