@@ -18,7 +18,7 @@ type OTP struct {
 func (OTP) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("otp").MaxLen(6).NotEmpty().DefaultFunc(func() string {
-			return publicid.MustWith(6, publicid.Numberic())
+			return publicid.MustWith(4, publicid.Numberic())
 		}).Unique(),
 		field.Time("expires_at").Default(time.Now().Add(5 * time.Minute)),
 	}
