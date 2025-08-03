@@ -29,6 +29,7 @@ func (User) Fields() []ent.Field {
 		field.String("phone_number").Optional().Unique().MaxLen(15).MinLen(7),
 		field.String("first_name").Optional(),
 		field.String("last_name").Optional(),
+		field.Int("login_count").Default(0),
 	}
 }
 
