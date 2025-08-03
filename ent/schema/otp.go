@@ -27,6 +27,10 @@ func (OTP) Fields() []ent.Field {
 // Edges of the OTP.
 func (OTP) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("user", User.Type).Ref("otps").Unique().Required(),
+		edge.From("user", User.Type).
+			Ref("otps").
+			Unique().
+			Required(), // otp must belong to a user
 	}
 }
+
