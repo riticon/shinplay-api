@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -21,14 +22,25 @@ const (
 	FieldAuthID = "auth_id"
 	// FieldUsername holds the string denoting the username field in the database.
 	FieldUsername = "username"
+	// FieldEmail holds the string denoting the email field in the database.
+	FieldEmail = "email"
+	// FieldPhoneNumber holds the string denoting the phone_number field in the database.
+	FieldPhoneNumber = "phone_number"
 	// FieldFirstName holds the string denoting the first_name field in the database.
 	FieldFirstName = "first_name"
 	// FieldLastName holds the string denoting the last_name field in the database.
 	FieldLastName = "last_name"
-	// FieldEmail holds the string denoting the email field in the database.
-	FieldEmail = "email"
+	// EdgeOtps holds the string denoting the otps edge name in mutations.
+	EdgeOtps = "otps"
 	// Table holds the table name of the user in the database.
 	Table = "users"
+	// OtpsTable is the table that holds the otps relation/edge.
+	OtpsTable = "ot_ps"
+	// OtpsInverseTable is the table name for the OTP entity.
+	// It exists in this package in order to avoid circular dependency with the "otp" package.
+	OtpsInverseTable = "ot_ps"
+	// OtpsColumn is the table column denoting the otps relation/edge.
+	OtpsColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -38,9 +50,10 @@ var Columns = []string{
 	FieldUpdateTime,
 	FieldAuthID,
 	FieldUsername,
+	FieldEmail,
+	FieldPhoneNumber,
 	FieldFirstName,
 	FieldLastName,
-	FieldEmail,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -66,6 +79,8 @@ var (
 	AuthIDValidator func(string) error
 	// UsernameValidator is a validator for the "username" field. It is called by the builders before save.
 	UsernameValidator func(string) error
+	// PhoneNumberValidator is a validator for the "phone_number" field. It is called by the builders before save.
+	PhoneNumberValidator func(string) error
 )
 
 // OrderOption defines the ordering options for the User queries.
@@ -96,6 +111,16 @@ func ByUsername(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUsername, opts...).ToFunc()
 }
 
+// ByEmail orders the results by the email field.
+func ByEmail(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEmail, opts...).ToFunc()
+}
+
+// ByPhoneNumber orders the results by the phone_number field.
+func ByPhoneNumber(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPhoneNumber, opts...).ToFunc()
+}
+
 // ByFirstName orders the results by the first_name field.
 func ByFirstName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFirstName, opts...).ToFunc()
@@ -106,7 +131,23 @@ func ByLastName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastName, opts...).ToFunc()
 }
 
-// ByEmail orders the results by the email field.
-func ByEmail(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldEmail, opts...).ToFunc()
+// ByOtpsCount orders the results by otps count.
+func ByOtpsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOtpsStep(), opts...)
+	}
+}
+
+// ByOtps orders the results by otps terms.
+func ByOtps(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOtpsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newOtpsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OtpsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, OtpsTable, OtpsColumn),
+	)
 }
