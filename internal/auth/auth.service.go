@@ -63,7 +63,6 @@ func NewAuthService(userService *user.UserService, otpService *otp.OTPService, s
 }
 
 func (s *AuthService) LoginUser(user *ent.User, ipAddress string, userAgent string) (token Token, userInfo UserInfo, sessionID string, err error) {
-	s.config.Logger.Info("Logging in user", zap.Int("userId", user.ID))
 	// Create a new session for the user
 	tokens, err := s.GenerateAuthTokens(user)
 	if err != nil {
@@ -79,9 +78,8 @@ func (s *AuthService) LoginUser(user *ent.User, ipAddress string, userAgent stri
 		FirstName:   user.FirstName,
 		LastName:    user.LastName,
 	}
-	s.config.Logger.Info("User info", zap.Any("userInfo", userInfo))
-	s.config.Logger.Info("Session Repository", zap.Any("sessionRepository", s.otpService))
-	s.config.Logger.Info("Session Data", zap.Any("id", ipAddress), zap.Any("userAgent", userAgent), zap.Any("refreshToken", tokens.RefreshToken), zap.Any("expiresAt", time.Now().Add(30*24*time.Hour)))
+
+	s.config.Logger.Info("Creating Session", zap.Any("id", ipAddress), zap.Any("userAgent", userAgent))
 
 	session, err := s.sessionRepository.CreateNewSession(
 		context.Background(),
@@ -92,8 +90,6 @@ func (s *AuthService) LoginUser(user *ent.User, ipAddress string, userAgent stri
 		ipAddress,
 	)
 
-	// s.config.Logger.Info("Session created", zap.String("sessionID", session.SessionID))
-
 	if err != nil {
 		s.config.Logger.Error("Failed to create session", zap.Error(err))
 		return Token{}, UserInfo{}, "", err
@@ -103,8 +99,6 @@ func (s *AuthService) LoginUser(user *ent.User, ipAddress string, userAgent stri
 }
 
 func (s *AuthService) GenerateAuthTokens(user *ent.User) (token Token, err error) {
-	s.config.Logger.Info("Generating auth token for user", zap.Int("userId", user.ID))
-
 	accessToken, _ := s.generateAccessToken(user)
 	refreshToken, err := s.generateRefreshToken(user)
 
@@ -117,7 +111,6 @@ func (s *AuthService) GenerateAuthTokens(user *ent.User) (token Token, err error
 }
 
 func (s *AuthService) generateAccessToken(user *ent.User) (string, error) {
-	s.config.Logger.Info("Generating access token for user", zap.Int("userId", user.ID))
 	claims := jwt.MapClaims{
 		"sub": user.AuthID,
 		"exp": time.Now().Add(1 * time.Hour).Unix(),
@@ -127,8 +120,6 @@ func (s *AuthService) generateAccessToken(user *ent.User) (string, error) {
 }
 
 func (s *AuthService) generateRefreshToken(user *ent.User) (string, error) {
-	s.config.Logger.Info("Generating refresh token for user", zap.Int("userId", user.ID))
-
 	// valid for 30 days
 	claims := jwt.MapClaims{
 		"sub": user.AuthID,
@@ -140,12 +131,9 @@ func (s *AuthService) generateRefreshToken(user *ent.User) (string, error) {
 }
 
 func (s *AuthService) SendWhatsAppOTP(phoneNumber string) error {
-	s.config.Logger.Info("Sending WhatsApp OTP", zap.String("phoneNumber", phoneNumber))
 	url := "https://graph.facebook.com/v22.0/" + s.config.WhatsApp.PhoneId + "/messages"
 	token := s.config.WhatsApp.Token
 	otp, err := s.GenerateOTP(phoneNumber)
-
-	s.config.Logger.Info("Generated OTP", zap.String("otp", otp))
 
 	if err != nil {
 		return fmt.Errorf("error generating OTP: %w", err)
@@ -222,8 +210,6 @@ func (s *AuthService) SendWhatsAppOTP(phoneNumber string) error {
 }
 
 func (s *AuthService) GenerateOTP(phoneNumber string) (string, error) {
-	s.config.Logger.Info("Generating OTP for phone number", zap.String("phoneNumber", phoneNumber))
-
 	// Find if user with phoneNumber exists
 	// If not, create a new user with the phoneNumber
 	// and return the OTP
@@ -239,14 +225,10 @@ func (s *AuthService) GenerateOTP(phoneNumber string) (string, error) {
 		return "", fmt.Errorf("error creating OTP: %w", err)
 	}
 
-	s.config.Logger.Info("OTP created successfully", zap.String("otp", otp.Otp))
-
 	return otp.Otp, nil
 }
 
 func (s *AuthService) VerifyWhatsAppOTP(phoneNumber string, otp string) (bool, *ent.User) {
-	s.config.Logger.Info("Verifying WhatsApp OTP", zap.String("phoneNumber", phoneNumber), zap.String("otp", otp))
-
 	// Find user by phone number
 	user, err := s.userService.FindByPhone(phoneNumber)
 	if err != nil {
@@ -264,16 +246,5 @@ func (s *AuthService) VerifyWhatsAppOTP(phoneNumber string, otp string) (bool, *
 	// Expire the OTP
 	s.otpService.ExpireOtp(otp, user.ID)
 
-	s.config.Logger.Info("User Service found", zap.Any("user", user))
-	s.config.Logger.Info("OTP is valid")
 	return is_valid, user
 }
-
-// , UserInfo{
-// 		AuthID:      user.AuthID,
-// 		PhoneNumber: user.PhoneNumber,
-// 		UserName:    user.Username,
-// 		Email:       user.Email,
-// 		FirstName:   user.FirstName,
-// 		LastName:    user.LastName,
-// 	}

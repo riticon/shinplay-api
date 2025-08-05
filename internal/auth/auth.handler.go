@@ -62,7 +62,7 @@ func (h *AuthHandler) VerifyWhatsAppOTP(ctx *fiber.Ctx) error {
 	isValid, user := h.authService.VerifyWhatsAppOTP(body.PhoneNumber, body.Otp)
 
 	if !isValid {
-		h.config.Logger.Warn("Failed to verify WhatsApp OTP", zap.String("phone_number", body.PhoneNumber))
+		h.config.Logger.Info("Failed to verify WhatsApp OTP", zap.String("phone_number", body.PhoneNumber))
 		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Invalid OTP or OTP expired",

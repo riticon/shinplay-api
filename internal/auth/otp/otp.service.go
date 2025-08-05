@@ -37,36 +37,29 @@ func (s *OTPService) CreateNewOTP(user *ent.User) (*ent.OTP, error) {
 }
 
 func (s *OTPService) IsOTPValid(otpCode string, user *ent.User) (bool, error) {
-	s.config.Logger.Info("Validating OTP", zap.String("otpCode", otpCode), zap.Int("userId", user.ID))
-
 	otp, err := s.otpRepository.FindOTPByUser(context.Background(), otpCode, user)
 
 	if err != nil {
-		s.config.Logger.Debug("Failed to find OTP for user", zap.Error(err))
+		s.config.Logger.Info("Failed to find OTP for user", zap.Error(err))
 		return false, err
 	}
 
 	if otp == nil {
-		s.config.Logger.Info("No OTP found for user", zap.Int("userId", user.ID))
+		s.config.Logger.Info("No OTP found for user")
 		return false, nil
 	}
 
-	s.config.Logger.Info("OTP found for user", zap.Int("userId", user.ID), zap.String("otpCode", otp.Otp))
 	return true, nil
 }
 
 func (s *OTPService) ExpireOtp(otpCode string, userId int) (bool, error) {
-	s.config.Logger.Info("Expiring OTP", zap.String("otpCode", otpCode), zap.Int("userId", userId))
-
-	deletedId, err := s.otpRepository.DeleteOTP(context.Background(), otpCode, userId)
-
-	s.config.Logger.Info("OTP is used - Deleting", zap.Int("deletedId", deletedId))
+	s.config.Logger.Info("OTP is used - Deleting")
+	_, err := s.otpRepository.DeleteOTP(context.Background(), otpCode, userId)
 
 	if err != nil {
 		s.config.Logger.Error("Failed to delete OTP", zap.Error(err))
 		return false, err
 	}
 
-	s.config.Logger.Info("OTP deleted successfully", zap.Int("deletedId", deletedId))
 	return true, nil
 }
