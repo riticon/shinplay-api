@@ -11,8 +11,10 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
-	"github.com/shinplay/internal/api/handlers"
+	"github.com/shinplay/internal"
 	"github.com/shinplay/internal/auth"
+	"github.com/shinplay/internal/auth/otp"
+	"github.com/shinplay/internal/auth/session"
 	"github.com/shinplay/internal/config"
 	"github.com/shinplay/internal/db"
 	"github.com/shinplay/internal/user"
@@ -30,11 +32,13 @@ func main() {
 	container.Provide(user.NewUserRepository)
 	container.Provide(user.NewUserService)
 
-	container.Provide(auth.NewOTPRepository)
-	container.Provide(auth.NewOTPService)
+	container.Provide(otp.NewOTPRepository)
+	container.Provide(otp.NewOTPService)
+
+	container.Provide(session.NewSessionRepository)
 
 	container.Provide(auth.NewAuthService)
-	container.Provide(handlers.NewAuthHandler)
+	container.Provide(auth.NewAuthHandler)
 
 	app := fiber.New(
 		fiber.Config{
@@ -68,10 +72,10 @@ func main() {
 		},
 	}))
 
-	app.Get("/health", handlers.HealthCheck)
+	app.Get("/health", internal.HealthCheck)
 
 	// all the routes goes here
-	err := container.Invoke(func(r handlers.Routes) {
+	err := container.Invoke(func(r internal.Routes) {
 		api := app.Group("/api")
 
 		api.Post("/auth/whatsapp/send-otp", r.AuthHandler.SendWhatsAppOTP)

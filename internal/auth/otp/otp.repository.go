@@ -1,4 +1,4 @@
-package auth
+package otp
 
 import (
 	"context"
@@ -25,6 +25,7 @@ func NewOTPRepository(client *ent.Client) *OTPRepository {
 // CreateNewOTP implements OTPRepository.
 func (o *OTPRepository) CreateNewOTP(ctx context.Context, user *ent.User) (*ent.OTP, error) {
 	return o.client.OTP.Create().
+		SetOtp("1234").
 		SetUser(user).
 		Save(ctx)
 }
@@ -36,10 +37,10 @@ func (o *OTPRepository) FindOTPByUser(ctx context.Context, otp_code string, user
 		First(ctx)
 }
 
-func (o *OTPRepository) DeleteOTP(ctx context.Context, otpCode string, user_ *ent.User) (int, error) {
+func (o *OTPRepository) DeleteOTP(ctx context.Context, otpCode string, userId int) (int, error) {
 	otpId, err := o.client.OTP.Delete().
 		Where(otp.OtpEQ(otpCode)).
-		Where(otp.HasUserWith(user.IDEQ(user_.ID))).
+		Where(otp.HasUserWith(user.IDEQ(userId))).
 		Exec(ctx)
 
 	if err != nil {

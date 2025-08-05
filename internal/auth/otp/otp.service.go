@@ -1,4 +1,4 @@
-package auth
+package otp
 
 import (
 	"context"
@@ -55,10 +55,10 @@ func (s *OTPService) IsOTPValid(otpCode string, user *ent.User) (bool, error) {
 	return true, nil
 }
 
-func (s *OTPService) ExpireOtp(otpCode string, user *ent.User) (bool, error) {
-	s.config.Logger.Info("Expiring OTP", zap.String("otpCode", otpCode), zap.Int("userId", user.ID))
+func (s *OTPService) ExpireOtp(otpCode string, userId int) (bool, error) {
+	s.config.Logger.Info("Expiring OTP", zap.String("otpCode", otpCode), zap.Int("userId", userId))
 
-	deletedId, err := s.otpRepository.DeleteOTP(context.Background(), otpCode, user)
+	deletedId, err := s.otpRepository.DeleteOTP(context.Background(), otpCode, userId)
 
 	s.config.Logger.Info("OTP is used - Deleting", zap.Int("deletedId", deletedId))
 
