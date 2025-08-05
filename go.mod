@@ -5,7 +5,7 @@ go 1.24.2
 require (
 	entgo.io/ent v0.14.4
 	github.com/gofiber/contrib/fiberzap/v2 v2.1.6
-	github.com/gofiber/fiber/v2 v2.52.6
+	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/joho/godotenv v1.5.1
 	github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/pkg/errors v0.9.1
