@@ -95,6 +95,11 @@ func LastName(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldLastName, v))
 }
 
+// LoginCount applies equality check predicate on the "login_count" field. It's identical to LoginCountEQ.
+func LoginCount(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldLoginCount, v))
+}
+
 // CreateTimeEQ applies the EQ predicate on the "create_time" field.
 func CreateTimeEQ(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldCreateTime, v))
@@ -613,6 +618,69 @@ func LastNameEqualFold(v string) predicate.User {
 // LastNameContainsFold applies the ContainsFold predicate on the "last_name" field.
 func LastNameContainsFold(v string) predicate.User {
 	return predicate.User(sql.FieldContainsFold(FieldLastName, v))
+}
+
+// LoginCountEQ applies the EQ predicate on the "login_count" field.
+func LoginCountEQ(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldLoginCount, v))
+}
+
+// LoginCountNEQ applies the NEQ predicate on the "login_count" field.
+func LoginCountNEQ(v int) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldLoginCount, v))
+}
+
+// LoginCountIn applies the In predicate on the "login_count" field.
+func LoginCountIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldIn(FieldLoginCount, vs...))
+}
+
+// LoginCountNotIn applies the NotIn predicate on the "login_count" field.
+func LoginCountNotIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldLoginCount, vs...))
+}
+
+// LoginCountGT applies the GT predicate on the "login_count" field.
+func LoginCountGT(v int) predicate.User {
+	return predicate.User(sql.FieldGT(FieldLoginCount, v))
+}
+
+// LoginCountGTE applies the GTE predicate on the "login_count" field.
+func LoginCountGTE(v int) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldLoginCount, v))
+}
+
+// LoginCountLT applies the LT predicate on the "login_count" field.
+func LoginCountLT(v int) predicate.User {
+	return predicate.User(sql.FieldLT(FieldLoginCount, v))
+}
+
+// LoginCountLTE applies the LTE predicate on the "login_count" field.
+func LoginCountLTE(v int) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldLoginCount, v))
+}
+
+// HasSessions applies the HasEdge predicate on the "sessions" edge.
+func HasSessions() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, SessionsTable, SessionsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSessionsWith applies the HasEdge predicate on the "sessions" edge with a given conditions (other predicates).
+func HasSessionsWith(preds ...predicate.Session) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := newSessionsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // HasOtps applies the HasEdge predicate on the "otps" edge.

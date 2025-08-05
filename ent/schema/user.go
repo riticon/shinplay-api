@@ -29,12 +29,14 @@ func (User) Fields() []ent.Field {
 		field.String("phone_number").Optional().Unique().MaxLen(15).MinLen(7),
 		field.String("first_name").Optional(),
 		field.String("last_name").Optional(),
+		field.Int("login_count").Default(0),
 	}
 }
 
 // Edges of the User.
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("otps", OTP.Type).StorageKey(edge.Column("user_id")),
+		edge.To("sessions", Session.Type),
+		edge.To("otps", OTP.Type),
 	}
 }

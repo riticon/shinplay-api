@@ -28,9 +28,7 @@ func NewUserService(userRepository *UserRepository) *UserService {
 }
 
 func (s *UserService) FindOrCreateByPhone(phoneNumber string) (*ent.User, error) {
-	s.config.Logger.Info("Finding or creating user by phone number", zap.String("phoneNumber", phoneNumber))
 	user, err := s.userRepository.GetByPhoneNumber(context.Background(), phoneNumber)
-	s.config.Logger.Info("User found", zap.Any("user", user))
 
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -50,13 +48,11 @@ func (s *UserService) FindOrCreateByPhone(phoneNumber string) (*ent.User, error)
 }
 
 func (s *UserService) FindByPhone(phoneNumber string) (*ent.User, error) {
-	s.config.Logger.Info("Finding user by phone number", zap.String("phoneNumber", phoneNumber))
 	user, err := s.userRepository.GetByPhoneNumber(context.Background(), phoneNumber)
 	if err != nil {
 		s.config.Logger.Error("Failed to get user by phone number", zap.Error(err))
 		return nil, err
 	}
 
-	s.config.Logger.Info("User found", zap.Any("user", user))
 	return user, nil
 }

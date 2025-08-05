@@ -1,13 +1,14 @@
-package handlers
+package internal
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/shinplay/internal/auth"
 	"go.uber.org/dig"
 )
 
 type Routes struct {
 	dig.In
-	AuthHandler *AuthHandler
+	AuthHandler *auth.AuthHandler
 }
 
 func HealthCheck(ctx *fiber.Ctx) error {

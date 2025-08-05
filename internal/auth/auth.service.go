@@ -2,6 +2,7 @@ package auth
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/shinplay/ent"
+	"github.com/shinplay/internal/auth/otp"
+	"github.com/shinplay/internal/auth/session"
 	"github.com/shinplay/internal/config"
 	"github.com/shinplay/internal/user"
 	"go.uber.org/zap"
@@ -28,28 +31,74 @@ type AuthServiceIntr interface {
 	GenerateAuthTokens(user *ent.User) (token Token, err error)
 	generateAccessToken(user *ent.User) (string, error)
 	generateRefreshToken(user *ent.User) (string, error)
+	LoginUser(user *ent.User) (token Token, err error)
 	// ValidateToken(token string) bool
 	// RefreshToken(refreshToken string) (token Token, err error)
 	// Logout(userId, sessionId string) error
 }
 
 type AuthService struct {
-	userService *user.UserService
-	otpService  *OTPService
-	config      *config.Config
+	userService       *user.UserService
+	otpService        *otp.OTPService
+	sessionRepository *session.SessionRepository
+	config            *config.Config
 }
 
-func NewAuthService(userService *user.UserService, otpService *OTPService, config *config.Config) *AuthService {
+type UserInfo struct {
+	AuthID      string `json:"auth_id"`
+	PhoneNumber string `json:"phone_number"`
+	UserName    string `json:"username"`
+	Email       string `json:"email"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+}
+
+func NewAuthService(userService *user.UserService, otpService *otp.OTPService, sessionRepository *session.SessionRepository, config *config.Config) *AuthService {
 	return &AuthService{
-		userService: userService,
-		otpService:  otpService,
-		config:      config,
+		userService:       userService,
+		otpService:        otpService,
+		sessionRepository: sessionRepository,
+		config:            config,
 	}
 }
 
-func (s *AuthService) GenerateAuthTokens(user *ent.User) (token Token, err error) {
-	s.config.Logger.Info("Generating auth token for user", zap.Int("userId", user.ID))
+func (s *AuthService) LoginUser(user *ent.User, ipAddress string, userAgent string) (token Token, userInfo UserInfo, sessionID string, err error) {
+	// Create a new session for the user
+	tokens, err := s.GenerateAuthTokens(user)
+	if err != nil {
+		s.config.Logger.Error("Failed to generate auth tokens", zap.Error(err))
+		return Token{}, UserInfo{}, "", err
+	}
 
+	userInfo = UserInfo{
+		AuthID:      user.AuthID,
+		PhoneNumber: user.PhoneNumber,
+		UserName:    user.Username,
+		Email:       user.Email,
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+	}
+
+	s.config.Logger.Info("Creating Session", zap.Any("id", ipAddress), zap.Any("userAgent", userAgent))
+
+	session, err := s.sessionRepository.CreateNewSession(
+		context.Background(),
+		user,
+		token.RefreshToken,
+		time.Now().Add(30*24*time.Hour), // 30 days expiration
+		userAgent,
+		ipAddress,
+	)
+
+	if err != nil {
+		s.config.Logger.Error("Failed to create session", zap.Error(err))
+		return Token{}, UserInfo{}, "", err
+	}
+
+	return tokens, userInfo, session.SessionID, nil
+}
+
+func (s *AuthService) GenerateAuthTokens(user *ent.User) (token Token, err error) {
 	accessToken, _ := s.generateAccessToken(user)
 	refreshToken, err := s.generateRefreshToken(user)
 
@@ -62,7 +111,6 @@ func (s *AuthService) GenerateAuthTokens(user *ent.User) (token Token, err error
 }
 
 func (s *AuthService) generateAccessToken(user *ent.User) (string, error) {
-	s.config.Logger.Info("Generating access token for user", zap.Int("userId", user.ID))
 	claims := jwt.MapClaims{
 		"sub": user.AuthID,
 		"exp": time.Now().Add(1 * time.Hour).Unix(),
@@ -72,8 +120,6 @@ func (s *AuthService) generateAccessToken(user *ent.User) (string, error) {
 }
 
 func (s *AuthService) generateRefreshToken(user *ent.User) (string, error) {
-	s.config.Logger.Info("Generating refresh token for user", zap.Int("userId", user.ID))
-
 	// valid for 30 days
 	claims := jwt.MapClaims{
 		"sub": user.AuthID,
@@ -85,12 +131,9 @@ func (s *AuthService) generateRefreshToken(user *ent.User) (string, error) {
 }
 
 func (s *AuthService) SendWhatsAppOTP(phoneNumber string) error {
-	s.config.Logger.Info("Sending WhatsApp OTP", zap.String("phoneNumber", phoneNumber))
 	url := "https://graph.facebook.com/v22.0/" + s.config.WhatsApp.PhoneId + "/messages"
 	token := s.config.WhatsApp.Token
 	otp, err := s.GenerateOTP(phoneNumber)
-
-	s.config.Logger.Info("Generated OTP", zap.String("otp", otp))
 
 	if err != nil {
 		return fmt.Errorf("error generating OTP: %w", err)
@@ -167,8 +210,6 @@ func (s *AuthService) SendWhatsAppOTP(phoneNumber string) error {
 }
 
 func (s *AuthService) GenerateOTP(phoneNumber string) (string, error) {
-	s.config.Logger.Info("Generating OTP for phone number", zap.String("phoneNumber", phoneNumber))
-
 	// Find if user with phoneNumber exists
 	// If not, create a new user with the phoneNumber
 	// and return the OTP
@@ -184,53 +225,26 @@ func (s *AuthService) GenerateOTP(phoneNumber string) (string, error) {
 		return "", fmt.Errorf("error creating OTP: %w", err)
 	}
 
-	s.config.Logger.Info("OTP created successfully", zap.String("otp", otp.Otp))
-
 	return otp.Otp, nil
 }
 
-type UserInfo struct {
-	AuthID      string `json:"auth_id"`
-	PhoneNumber string `json:"phone_number"`
-	UserName    string `json:"username"`
-	Email       string `json:"email"`
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name"`
-}
-
-func (s *AuthService) VerifyWhatsAppOTP(phoneNumber string, otp string) (Token, UserInfo, error) {
-	s.config.Logger.Info("Verifying WhatsApp OTP", zap.String("phoneNumber", phoneNumber), zap.String("otp", otp))
-
+func (s *AuthService) VerifyWhatsAppOTP(phoneNumber string, otp string) (bool, *ent.User) {
 	// Find user by phone number
 	user, err := s.userService.FindByPhone(phoneNumber)
 	if err != nil {
 		s.config.Logger.Info("Failed to find user", zap.Error(err))
-		return Token{}, UserInfo{}, fmt.Errorf("error finding user: %w", err)
+		return false, nil
 	}
 
 	// Check if OTP is valid
 	is_valid, err := s.otpService.IsOTPValid(otp, user)
 	if err != nil {
-		s.config.Logger.Info("Failed to find OTP", zap.Error(err))
-		return Token{}, UserInfo{}, fmt.Errorf("error finding OTP: %w", err)
-	}
-
-	if !is_valid {
-		return Token{}, UserInfo{}, nil
+		s.config.Logger.Info("Failed to validate OTP", zap.Error(err))
+		return false, nil
 	}
 
 	// Expire the OTP
-	s.otpService.ExpireOtp(otp, user)
+	s.otpService.ExpireOtp(otp, user.ID)
 
-	tokens, err := s.GenerateAuthTokens(user)
-
-	s.config.Logger.Info("OTP is valid, generating tokens: ", zap.Any("tokens", "[Filtered]"))
-	return tokens, UserInfo{
-		AuthID:      user.AuthID,
-		PhoneNumber: user.PhoneNumber,
-		UserName:    user.Username,
-		Email:       user.Email,
-		FirstName:   user.FirstName,
-		LastName:    user.LastName,
-	}, err
+	return is_valid, user
 }

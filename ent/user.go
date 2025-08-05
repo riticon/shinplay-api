@@ -33,6 +33,8 @@ type User struct {
 	FirstName string `json:"first_name,omitempty"`
 	// LastName holds the value of the "last_name" field.
 	LastName string `json:"last_name,omitempty"`
+	// LoginCount holds the value of the "login_count" field.
+	LoginCount int `json:"login_count,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -41,17 +43,28 @@ type User struct {
 
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
+	// Sessions holds the value of the sessions edge.
+	Sessions []*Session `json:"sessions,omitempty"`
 	// Otps holds the value of the otps edge.
 	Otps []*OTP `json:"otps,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
+}
+
+// SessionsOrErr returns the Sessions value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) SessionsOrErr() ([]*Session, error) {
+	if e.loadedTypes[0] {
+		return e.Sessions, nil
+	}
+	return nil, &NotLoadedError{edge: "sessions"}
 }
 
 // OtpsOrErr returns the Otps value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) OtpsOrErr() ([]*OTP, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.Otps, nil
 	}
 	return nil, &NotLoadedError{edge: "otps"}
@@ -62,7 +75,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case user.FieldID:
+		case user.FieldID, user.FieldLoginCount:
 			values[i] = new(sql.NullInt64)
 		case user.FieldAuthID, user.FieldUsername, user.FieldEmail, user.FieldPhoneNumber, user.FieldFirstName, user.FieldLastName:
 			values[i] = new(sql.NullString)
@@ -137,6 +150,12 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				u.LastName = value.String
 			}
+		case user.FieldLoginCount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field login_count", values[i])
+			} else if value.Valid {
+				u.LoginCount = int(value.Int64)
+			}
 		default:
 			u.selectValues.Set(columns[i], values[i])
 		}
@@ -148,6 +167,11 @@ func (u *User) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (u *User) Value(name string) (ent.Value, error) {
 	return u.selectValues.Get(name)
+}
+
+// QuerySessions queries the "sessions" edge of the User entity.
+func (u *User) QuerySessions() *SessionQuery {
+	return NewUserClient(u.config).QuerySessions(u)
 }
 
 // QueryOtps queries the "otps" edge of the User entity.
@@ -201,6 +225,9 @@ func (u *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("last_name=")
 	builder.WriteString(u.LastName)
+	builder.WriteString(", ")
+	builder.WriteString("login_count=")
+	builder.WriteString(fmt.Sprintf("%v", u.LoginCount))
 	builder.WriteByte(')')
 	return builder.String()
 }
