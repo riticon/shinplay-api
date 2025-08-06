@@ -34,6 +34,7 @@ type AuthServiceIntr interface {
 	generateAccessToken(user *ent.User) (string, error)
 	generateRefreshToken(user *ent.User) (string, error)
 	LoginUser(user *ent.User) (token Token, err error)
+
 	// ValidateToken(token string) bool
 	// RefreshToken(refreshToken string) (token Token, err error)
 	// Logout(userId, sessionId string) error
