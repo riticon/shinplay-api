@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"cloud.google.com/go/auth/credentials/idtoken"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/shinplay/ent"
 	"github.com/shinplay/internal/auth/otp"
@@ -27,6 +28,7 @@ type AuthServiceIntr interface {
 	// LoginOrSignupWithEmail(email string, channel string) (token Token, err error)
 	SendWhatsAppOTP(phoneNumber string) error
 	GenerateOTP(phoneNumber string) (otp string, err error)
+	GoogleOauthSignIn(idToken string, ipAddress string, userAgent string) (token Token, userInfo UserInfo, sessionID string, err error)
 	VerifyWhatsAppOTP(phoneNumber, otp string) (bool, error)
 	GenerateAuthTokens(user *ent.User) (token Token, err error)
 	generateAccessToken(user *ent.User) (string, error)
@@ -96,6 +98,27 @@ func (s *AuthService) LoginUser(user *ent.User, ipAddress string, userAgent stri
 	}
 
 	return tokens, userInfo, session.SessionID, nil
+}
+
+func (s *AuthService) GoogleOauthSignIn(idToken string, ipAddress string, userAgent string) (user *ent.User, err error) {
+	// Validate the ID token
+	payload, err := idtoken.Validate(context.Background(), idToken, s.config.Google.ClientID)
+
+	if err != nil {
+		s.config.Logger.Error("Failed to validate ID token", zap.Error(err))
+		return nil, fmt.Errorf("failed to validate ID token: %w", err)
+	}
+
+	// Find user by email
+	email := payload.Claims["email"].(string)
+	user, err = s.userService.FindOrCreateByEmail(email)
+
+	if err != nil {
+		s.config.Logger.Error("Failed to find or create user by email", zap.Error(err))
+		return nil, fmt.Errorf("failed to find or create user: %w", err)
+	}
+
+	return user, nil
 }
 
 func (s *AuthService) GenerateAuthTokens(user *ent.User) (token Token, err error) {

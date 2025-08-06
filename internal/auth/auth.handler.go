@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/shinplay/internal/auth/session"
 	"github.com/shinplay/internal/config"
@@ -92,6 +94,54 @@ func (h *AuthHandler) VerifyWhatsAppOTP(ctx *fiber.Ctx) error {
 	return ctx.JSON(fiber.Map{
 		"status":  "success",
 		"message": "OTP verified successfully",
+		"data": fiber.Map{
+			"access_token": tokens.AccessToken,
+			"user":         userInfo,
+		},
+	})
+}
+
+func (h *AuthHandler) GoogleOauthSignin(ctx *fiber.Ctx) error {
+	authHeader := ctx.Get("Authorization")
+	if authHeader == "" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Missing Id Token in Authorization header",
+		})
+	}
+
+	idToken := strings.TrimPrefix(authHeader, "Bearer ")
+
+	user, err := h.authService.GoogleOauthSignIn(idToken, ctx.IP(), ctx.Get("User-Agent"))
+
+	if err != nil {
+		h.config.Logger.Error("Failed to sign in with Google", zap.Error(err))
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to sign in with Google, please try again later",
+		})
+	}
+
+	tokens, userInfo, sessionId, err := h.authService.LoginUser(user, ctx.IP(), ctx.Get("User-Agent"))
+	if err != nil {
+		h.config.Logger.Error("Failed to create session", zap.Error(err))
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to Login, please try again later",
+		})
+	}
+
+	ctx.Cookie(&fiber.Cookie{
+		Name:     "session_id",
+		Value:    sessionId,
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: fiber.CookieSameSiteStrictMode,
+	})
+
+	return ctx.JSON(fiber.Map{
+		"status":  "success",
+		"message": "User signed in successfully",
 		"data": fiber.Map{
 			"access_token": tokens.AccessToken,
 			"user":         userInfo,
