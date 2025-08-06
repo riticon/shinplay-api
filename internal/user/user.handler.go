@@ -8,7 +8,7 @@ import (
 )
 
 type UserHandlerInterface interface {
-	CheckUsernameAvailability(username string) (bool, error)
+	CheckUsernameAvailability(ctx *fiber.Ctx) (bool, error)
 }
 
 type UserHandler struct {
@@ -23,18 +23,18 @@ func NewUserHandler(userService *UserService, config *config.Config) *UserHandle
 	}
 }
 
-type UsernameParam struct {
-	check string `json:"username" xml:"username" form:"username"`
+type UsernameQuery struct {
+	Check string `json:"check" xml:"check" form:"check" query:"check" param:"check"`
 }
 
 func (h *UserHandler) CheckUsernameAvailability(ctx *fiber.Ctx) error {
-	var params UsernameParam
-	if err := ctx.ParamsParser(&params); err != nil {
+	var query = new(UsernameQuery)
+	if err := ctx.QueryParser(query); err != nil {
 		return err
 	}
 
-	h.config.Logger.Info("Checking username availability", zap.String("username", params.check))
-	_, err := h.userService.FindByUsername(params.check)
+	h.config.Logger.Info("Checking username availability", zap.String("username", query.Check))
+	_, err := h.userService.FindByUsername(query.Check)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return ctx.JSON(fiber.Map{"available": true})
