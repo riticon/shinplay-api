@@ -76,10 +76,10 @@ func main() {
 
 	// all the routes goes here
 	err := container.Invoke(func(r internal.Routes) {
-		api := app.Group("/api")
 
-		api.Post("/auth/whatsapp/send-otp", r.AuthHandler.SendWhatsAppOTP)
-		api.Post("/auth/whatsapp/verify-otp", r.AuthHandler.VerifyWhatsAppOTP)
+		app.Post("/auth/whatsapp/send-otp", r.AuthHandler.SendWhatsAppOTP)
+		app.Post("/auth/whatsapp/verify-otp", r.AuthHandler.VerifyWhatsAppOTP)
+		app.Post("/auth/google/oauth", r.AuthHandler.GoogleOauthSignin)
 	})
 
 	if err != nil {
