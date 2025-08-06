@@ -10,24 +10,26 @@ import (
 
 // Env Struct to hold environment variables.
 type Env struct {
-	Environment     string
-	ServerPort      string
-	ServerHost      string
-	DBHost          string
-	DBPort          string
-	DBUser          string
-	DBPassword      string
-	DBName          string
-	DBSSLMode       string
-	RedisHost       string
-	RedisPort       string
-	RedisDB         string
-	RedisPassword   string
-	RedisURL        string
-	WhatsAppToken   string
-	WhatsAppPhoneId string
-	CORS            string
-	JWTSecret       string
+	Environment        string
+	ServerPort         string
+	ServerHost         string
+	DBHost             string
+	DBPort             string
+	DBUser             string
+	DBPassword         string
+	DBName             string
+	DBSSLMode          string
+	RedisHost          string
+	RedisPort          string
+	RedisDB            string
+	RedisPassword      string
+	RedisURL           string
+	WhatsAppToken      string
+	WhatsAppPhoneId    string
+	CORS               string
+	JWTSecret          string
+	GoogleClientID     string
+	GoogleClientSecret string
 }
 
 // LoadEnv loads environment variables from a .env file.

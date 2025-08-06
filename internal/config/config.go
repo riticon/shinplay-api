@@ -25,6 +25,11 @@ type WhatsAppConfig struct {
 	PhoneId string
 }
 
+type GoogleConfig struct {
+	ClientID     string
+	ClientSecret string
+}
+
 type Config struct {
 	Name        string
 	Environment string
@@ -32,6 +37,7 @@ type Config struct {
 	Server      ServerConfig
 	WhatsApp    WhatsAppConfig
 	JWTSecret   string
+	Google      GoogleConfig
 	Logger      *zap.Logger
 }
 
@@ -65,6 +71,10 @@ func GetConfig() *Config {
 			WhatsApp: WhatsAppConfig{
 				Token:   env.WhatsAppToken,
 				PhoneId: env.WhatsAppPhoneId,
+			},
+			Google: GoogleConfig{
+				ClientID:     env.GoogleClientID,
+				ClientSecret: env.GoogleClientSecret,
 			},
 			Logger: nil,
 		}

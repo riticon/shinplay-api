@@ -10,6 +10,7 @@ import (
 
 type UserServiceIntr interface {
 	FindOrCreateByPhone(phoneNumber string) (*ent.User, error)
+	FindOrCreateByEmail(email string) (*ent.User, error)
 	FindByPhone(phoneNumber string) (*ent.User, error)
 }
 
@@ -52,6 +53,26 @@ func (s *UserService) FindByPhone(phoneNumber string) (*ent.User, error) {
 	if err != nil {
 		s.config.Logger.Error("Failed to get user by phone number", zap.Error(err))
 		return nil, err
+	}
+
+	return user, nil
+}
+
+func (s *UserService) FindOrCreateByEmail(email string) (*ent.User, error) {
+	user, err := s.userRepository.FindByEmail(context.Background(), email)
+
+	if err != nil {
+		if ent.IsNotFound(err) {
+			s.config.Logger.Info("User not found, creating new user", zap.String("email", email))
+			user, err = s.userRepository.CreateByEmail(context.Background(), email)
+			if err != nil {
+				s.config.Logger.Error("Failed to create user by email", zap.Error(err))
+				return nil, err
+			}
+		} else {
+			s.config.Logger.Error("Failed to get user by email", zap.Error(err))
+			return nil, err
+		}
 	}
 
 	return user, nil
