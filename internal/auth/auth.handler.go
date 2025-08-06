@@ -148,3 +148,30 @@ func (h *AuthHandler) GoogleOauthSignin(ctx *fiber.Ctx) error {
 		},
 	})
 }
+
+func (h *AuthHandler) AuthenticateUser(ctx *fiber.Ctx) error {
+	h.config.Logger.Info("Authenticating user")
+
+	header := ctx.Get("Authorization")
+	token := strings.TrimPrefix(header, "Bearer ")
+
+	if token == "" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Missing Authorization header",
+		})
+	}
+
+	isValid, user := h.authService.ValidateToken(token)
+	if !isValid {
+		h.config.Logger.Info("Invalid or expired token")
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid or expired token",
+		})
+	}
+
+	ctx.Locals("user", user)
+
+	return ctx.Next()
+}

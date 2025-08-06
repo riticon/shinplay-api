@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"time"
 
 	"github.com/gofiber/contrib/fiberzap/v2"
@@ -26,6 +27,7 @@ func main() {
 
 	container := dig.New()
 
+	container.Provide(context.Background)
 	container.Provide(config.GetConfig)
 	container.Provide(db.InitializeDatabase)
 
@@ -39,6 +41,8 @@ func main() {
 
 	container.Provide(auth.NewAuthService)
 	container.Provide(auth.NewAuthHandler)
+
+	container.Provide(user.NewUserHandler)
 
 	app := fiber.New(
 		fiber.Config{
@@ -77,9 +81,15 @@ func main() {
 	// all the routes goes here
 	err := container.Invoke(func(r internal.Routes) {
 
+		// auth routes
 		app.Post("/auth/whatsapp/send-otp", r.AuthHandler.SendWhatsAppOTP)
 		app.Post("/auth/whatsapp/verify-otp", r.AuthHandler.VerifyWhatsAppOTP)
 		app.Post("/auth/google/oauth", r.AuthHandler.GoogleOauthSignin)
+
+		app.Use(r.AuthHandler.AuthenticateUser) // Apply auth middleware
+		// user routes
+		app.Get("/users/username", r.UserHandler.CheckUsernameAvailability)
+		app.Post("/users/username", r.UserHandler.ChangeUsername)
 	})
 
 	if err != nil {
