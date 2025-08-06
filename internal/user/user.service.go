@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/shinplay/ent"
+	"github.com/shinplay/ent/user"
 	"github.com/shinplay/internal/config"
 	"go.uber.org/zap"
 )
@@ -14,6 +15,7 @@ type UserServiceIntr interface {
 	FindByPhone(phoneNumber string) (*ent.User, error)
 	FindByUsername(username string) (*ent.User, error)
 	ChangeUsername(userID string, newUsername string) error
+	FindUserByAuthID(authID string) (*ent.User, error)
 }
 
 // UserService provides methods to manage user-related operations.
@@ -113,4 +115,14 @@ func (s *UserService) ChangeUsername(userID string, newUsername string) (*ent.Us
 
 	s.config.Logger.Info("Username changed successfully", zap.String("userID", userID), zap.String("newUsername", newUsername))
 	return user, false, nil
+}
+
+func (s *UserService) FindUserByAuthID(authID string) (*ent.User, error) {
+	user, err := s.userRepository.client.User.Query().Where(user.AuthIDEQ(authID)).Only(s.ctx)
+	if err != nil {
+		s.config.Logger.Info("Failed to find user by auth ID", zap.String("authID", authID), zap.Error(err))
+		return nil, err
+	}
+
+	return user, nil
 }

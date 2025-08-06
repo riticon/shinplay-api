@@ -34,8 +34,7 @@ type AuthServiceIntr interface {
 	generateAccessToken(user *ent.User) (string, error)
 	generateRefreshToken(user *ent.User) (string, error)
 	LoginUser(user *ent.User) (token Token, err error)
-
-	// ValidateToken(token string) bool
+	ValidateToken(token string) bool
 	// RefreshToken(refreshToken string) (token Token, err error)
 	// Logout(userId, sessionId string) error
 }
@@ -271,4 +270,41 @@ func (s *AuthService) VerifyWhatsAppOTP(phoneNumber string, otp string) (bool, *
 	s.otpService.ExpireOtp(otp, user.ID)
 
 	return is_valid, user
+}
+
+func (s *AuthService) ValidateToken(token string) (bool, *ent.User) {
+	// Parse the token
+	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (any, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(s.config.JWTSecret), nil
+	})
+
+	if err != nil {
+		s.config.Logger.Error("Failed to parse token", zap.Error(err))
+		return false, nil
+	}
+
+	claims, ok := parsedToken.Claims.(jwt.MapClaims)
+	if !ok || !parsedToken.Valid {
+		s.config.Logger.Error("Invalid token claims")
+		return false, nil
+	}
+
+	sub, err := claims.GetSubject()
+	if err != nil {
+		s.config.Logger.Error("Failed to get subject from claims", zap.Error(err))
+		return false, nil
+	}
+
+	s.config.Logger.Info("Token validated successfully", zap.Any("claims", sub))
+
+	user, err := s.userService.FindUserByAuthID(sub)
+	if err != nil {
+		s.config.Logger.Error("Failed to find user by auth ID", zap.String("auth_id", sub), zap.Error(err))
+		return false, nil
+	}
+
+	return parsedToken.Valid, user
 }
