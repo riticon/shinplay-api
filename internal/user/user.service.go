@@ -13,6 +13,7 @@ type UserServiceIntr interface {
 	FindOrCreateByEmail(email string) (*ent.User, error)
 	FindByPhone(phoneNumber string) (*ent.User, error)
 	FindByUsername(username string) (*ent.User, error)
+	ChangeUsername(userID string, newUsername string) error
 }
 
 // UserService provides methods to manage user-related operations.
@@ -89,4 +90,27 @@ func (s *UserService) FindByUsername(username string) (*ent.User, error) {
 	}
 
 	return user, nil
+}
+
+func (s *UserService) ChangeUsername(userID string, newUsername string) (*ent.User, bool, error) {
+	// check if the new username is already taken
+	existingUser, err := s.userRepository.FindByUsername(s.ctx, newUsername)
+	if err != nil && !ent.IsNotFound(err) {
+		s.config.Logger.Error("Failed to check existing username", zap.Error(err))
+		return nil, false, err
+	}
+
+	if existingUser != nil {
+		s.config.Logger.Info("Username is already taken", zap.String("newUsername", newUsername))
+		return nil, true, nil
+	}
+
+	user, err := s.userRepository.UpdateUsername(s.ctx, userID, newUsername)
+	if err != nil {
+		s.config.Logger.Error("Failed to change username", zap.String("userID", userID), zap.Error(err))
+		return nil, false, err
+	}
+
+	s.config.Logger.Info("Username changed successfully", zap.String("userID", userID), zap.String("newUsername", newUsername))
+	return user, false, nil
 }

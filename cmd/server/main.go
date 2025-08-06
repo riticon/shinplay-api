@@ -88,6 +88,7 @@ func main() {
 
 		// user routes
 		app.Get("/users/username", r.UserHandler.CheckUsernameAvailability)
+		app.Post("/users/username", r.UserHandler.ChangeUsername)
 	})
 
 	if err != nil {
