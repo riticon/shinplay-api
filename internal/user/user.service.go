@@ -12,6 +12,7 @@ type UserServiceIntr interface {
 	FindOrCreateByPhone(phoneNumber string) (*ent.User, error)
 	FindOrCreateByEmail(email string) (*ent.User, error)
 	FindByPhone(phoneNumber string) (*ent.User, error)
+	FindByUsername(username string) (*ent.User, error)
 }
 
 // UserService provides methods to manage user-related operations.
@@ -72,9 +73,19 @@ func (s *UserService) FindOrCreateByEmail(email string) (*ent.User, error) {
 				return nil, err
 			}
 		} else {
-			s.config.Logger.Error("Failed to get user by email", zap.Error(err))
+			s.config.Logger.Info("Failed to get user by email", zap.Error(err))
 			return nil, err
 		}
+	}
+
+	return user, nil
+}
+
+func (s *UserService) FindByUsername(username string) (*ent.User, error) {
+	user, err := s.userRepository.FindByUsername(s.ctx, username)
+	if err != nil {
+		s.config.Logger.Info("Failed to get user by username", zap.Error(err))
+		return nil, err
 	}
 
 	return user, nil

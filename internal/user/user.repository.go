@@ -14,6 +14,7 @@ type UserRepositoryIntr interface {
 	CreateByPhoneNumber(ctx context.Context, phoneNumber string) (*ent.User, error)
 	FindByEmail(ctx context.Context, email string) (*ent.User, error)
 	CreateByEmail(ctx context.Context, email string) (*ent.User, error)
+	FindByUsername(ctx context.Context, username string) (*ent.User, error)
 }
 
 type UserRepository struct {
@@ -47,4 +48,9 @@ func (r *UserRepository) CreateByEmail(ctx context.Context, email string) (*ent.
 	return r.client.User.Create().
 		SetEmail(email).
 		Save(ctx)
+}
+
+// FindByUsername implements UserRepository.
+func (r *UserRepository) FindByUsername(ctx context.Context, username string) (*ent.User, error) {
+	return r.client.User.Query().Where(user.UsernameEQ(username)).Only(ctx)
 }
