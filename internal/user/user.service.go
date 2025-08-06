@@ -16,15 +16,17 @@ type UserServiceIntr interface {
 
 // UserService provides methods to manage user-related operations.
 type UserService struct {
+	ctx            context.Context
 	userRepository *UserRepository
 	config         *config.Config
 }
 
 // NewUserService creates a new UserService instance.
-func NewUserService(userRepository *UserRepository) *UserService {
+func NewUserService(userRepository *UserRepository, config *config.Config, ctx context.Context) *UserService {
 	return &UserService{
+		config:         config,
+		ctx:            ctx,
 		userRepository: userRepository,
-		config:         config.GetConfig(),
 	}
 }
 

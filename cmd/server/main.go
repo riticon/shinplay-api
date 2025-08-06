@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"time"
 
 	"github.com/gofiber/contrib/fiberzap/v2"
@@ -26,6 +27,7 @@ func main() {
 
 	container := dig.New()
 
+	container.Provide(context.Background)
 	container.Provide(config.GetConfig)
 	container.Provide(db.InitializeDatabase)
 
