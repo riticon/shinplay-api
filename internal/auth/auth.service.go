@@ -86,7 +86,7 @@ func (s *AuthService) LoginUser(user *ent.User, ipAddress string, userAgent stri
 	session, err := s.sessionRepository.CreateNewSession(
 		context.Background(),
 		user,
-		token.RefreshToken,
+		tokens.RefreshToken,
 		time.Now().Add(30*24*time.Hour), // 30 days expiration
 		userAgent,
 		ipAddress,
