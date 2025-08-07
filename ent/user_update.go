@@ -11,7 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/shinplay/ent/otp"
 	"github.com/shinplay/ent/predicate"
+	"github.com/shinplay/ent/session"
 	"github.com/shinplay/ent/user"
 )
 
@@ -68,6 +70,46 @@ func (uu *UserUpdate) ClearUsername() *UserUpdate {
 	return uu
 }
 
+// SetEmail sets the "email" field.
+func (uu *UserUpdate) SetEmail(s string) *UserUpdate {
+	uu.mutation.SetEmail(s)
+	return uu
+}
+
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableEmail(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetEmail(*s)
+	}
+	return uu
+}
+
+// ClearEmail clears the value of the "email" field.
+func (uu *UserUpdate) ClearEmail() *UserUpdate {
+	uu.mutation.ClearEmail()
+	return uu
+}
+
+// SetPhoneNumber sets the "phone_number" field.
+func (uu *UserUpdate) SetPhoneNumber(s string) *UserUpdate {
+	uu.mutation.SetPhoneNumber(s)
+	return uu
+}
+
+// SetNillablePhoneNumber sets the "phone_number" field if the given value is not nil.
+func (uu *UserUpdate) SetNillablePhoneNumber(s *string) *UserUpdate {
+	if s != nil {
+		uu.SetPhoneNumber(*s)
+	}
+	return uu
+}
+
+// ClearPhoneNumber clears the value of the "phone_number" field.
+func (uu *UserUpdate) ClearPhoneNumber() *UserUpdate {
+	uu.mutation.ClearPhoneNumber()
+	return uu
+}
+
 // SetFirstName sets the "first_name" field.
 func (uu *UserUpdate) SetFirstName(s string) *UserUpdate {
 	uu.mutation.SetFirstName(s)
@@ -108,29 +150,102 @@ func (uu *UserUpdate) ClearLastName() *UserUpdate {
 	return uu
 }
 
-// SetEmail sets the "email" field.
-func (uu *UserUpdate) SetEmail(s string) *UserUpdate {
-	uu.mutation.SetEmail(s)
+// SetLoginCount sets the "login_count" field.
+func (uu *UserUpdate) SetLoginCount(i int) *UserUpdate {
+	uu.mutation.ResetLoginCount()
+	uu.mutation.SetLoginCount(i)
 	return uu
 }
 
-// SetNillableEmail sets the "email" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableEmail(s *string) *UserUpdate {
-	if s != nil {
-		uu.SetEmail(*s)
+// SetNillableLoginCount sets the "login_count" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableLoginCount(i *int) *UserUpdate {
+	if i != nil {
+		uu.SetLoginCount(*i)
 	}
 	return uu
 }
 
-// ClearEmail clears the value of the "email" field.
-func (uu *UserUpdate) ClearEmail() *UserUpdate {
-	uu.mutation.ClearEmail()
+// AddLoginCount adds i to the "login_count" field.
+func (uu *UserUpdate) AddLoginCount(i int) *UserUpdate {
+	uu.mutation.AddLoginCount(i)
 	return uu
+}
+
+// AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
+func (uu *UserUpdate) AddSessionIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddSessionIDs(ids...)
+	return uu
+}
+
+// AddSessions adds the "sessions" edges to the Session entity.
+func (uu *UserUpdate) AddSessions(s ...*Session) *UserUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uu.AddSessionIDs(ids...)
+}
+
+// AddOtpIDs adds the "otps" edge to the OTP entity by IDs.
+func (uu *UserUpdate) AddOtpIDs(ids ...int) *UserUpdate {
+	uu.mutation.AddOtpIDs(ids...)
+	return uu
+}
+
+// AddOtps adds the "otps" edges to the OTP entity.
+func (uu *UserUpdate) AddOtps(o ...*OTP) *UserUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return uu.AddOtpIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
+}
+
+// ClearSessions clears all "sessions" edges to the Session entity.
+func (uu *UserUpdate) ClearSessions() *UserUpdate {
+	uu.mutation.ClearSessions()
+	return uu
+}
+
+// RemoveSessionIDs removes the "sessions" edge to Session entities by IDs.
+func (uu *UserUpdate) RemoveSessionIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveSessionIDs(ids...)
+	return uu
+}
+
+// RemoveSessions removes "sessions" edges to Session entities.
+func (uu *UserUpdate) RemoveSessions(s ...*Session) *UserUpdate {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uu.RemoveSessionIDs(ids...)
+}
+
+// ClearOtps clears all "otps" edges to the OTP entity.
+func (uu *UserUpdate) ClearOtps() *UserUpdate {
+	uu.mutation.ClearOtps()
+	return uu
+}
+
+// RemoveOtpIDs removes the "otps" edge to OTP entities by IDs.
+func (uu *UserUpdate) RemoveOtpIDs(ids ...int) *UserUpdate {
+	uu.mutation.RemoveOtpIDs(ids...)
+	return uu
+}
+
+// RemoveOtps removes "otps" edges to OTP entities.
+func (uu *UserUpdate) RemoveOtps(o ...*OTP) *UserUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return uu.RemoveOtpIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -181,6 +296,11 @@ func (uu *UserUpdate) check() error {
 			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "User.username": %w`, err)}
 		}
 	}
+	if v, ok := uu.mutation.PhoneNumber(); ok {
+		if err := user.PhoneNumberValidator(v); err != nil {
+			return &ValidationError{Name: "phone_number", err: fmt.Errorf(`ent: validator failed for field "User.phone_number": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -208,6 +328,18 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if uu.mutation.UsernameCleared() {
 		_spec.ClearField(user.FieldUsername, field.TypeString)
 	}
+	if value, ok := uu.mutation.Email(); ok {
+		_spec.SetField(user.FieldEmail, field.TypeString, value)
+	}
+	if uu.mutation.EmailCleared() {
+		_spec.ClearField(user.FieldEmail, field.TypeString)
+	}
+	if value, ok := uu.mutation.PhoneNumber(); ok {
+		_spec.SetField(user.FieldPhoneNumber, field.TypeString, value)
+	}
+	if uu.mutation.PhoneNumberCleared() {
+		_spec.ClearField(user.FieldPhoneNumber, field.TypeString)
+	}
 	if value, ok := uu.mutation.FirstName(); ok {
 		_spec.SetField(user.FieldFirstName, field.TypeString, value)
 	}
@@ -220,11 +352,101 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if uu.mutation.LastNameCleared() {
 		_spec.ClearField(user.FieldLastName, field.TypeString)
 	}
-	if value, ok := uu.mutation.Email(); ok {
-		_spec.SetField(user.FieldEmail, field.TypeString, value)
+	if value, ok := uu.mutation.LoginCount(); ok {
+		_spec.SetField(user.FieldLoginCount, field.TypeInt, value)
 	}
-	if uu.mutation.EmailCleared() {
-		_spec.ClearField(user.FieldEmail, field.TypeString)
+	if value, ok := uu.mutation.AddedLoginCount(); ok {
+		_spec.AddField(user.FieldLoginCount, field.TypeInt, value)
+	}
+	if uu.mutation.SessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SessionsTable,
+			Columns: []string{user.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedSessionsIDs(); len(nodes) > 0 && !uu.mutation.SessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SessionsTable,
+			Columns: []string{user.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.SessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SessionsTable,
+			Columns: []string{user.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.OtpsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.OtpsTable,
+			Columns: []string{user.OtpsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(otp.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedOtpsIDs(); len(nodes) > 0 && !uu.mutation.OtpsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.OtpsTable,
+			Columns: []string{user.OtpsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(otp.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.OtpsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.OtpsTable,
+			Columns: []string{user.OtpsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(otp.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -286,6 +508,46 @@ func (uuo *UserUpdateOne) ClearUsername() *UserUpdateOne {
 	return uuo
 }
 
+// SetEmail sets the "email" field.
+func (uuo *UserUpdateOne) SetEmail(s string) *UserUpdateOne {
+	uuo.mutation.SetEmail(s)
+	return uuo
+}
+
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableEmail(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetEmail(*s)
+	}
+	return uuo
+}
+
+// ClearEmail clears the value of the "email" field.
+func (uuo *UserUpdateOne) ClearEmail() *UserUpdateOne {
+	uuo.mutation.ClearEmail()
+	return uuo
+}
+
+// SetPhoneNumber sets the "phone_number" field.
+func (uuo *UserUpdateOne) SetPhoneNumber(s string) *UserUpdateOne {
+	uuo.mutation.SetPhoneNumber(s)
+	return uuo
+}
+
+// SetNillablePhoneNumber sets the "phone_number" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillablePhoneNumber(s *string) *UserUpdateOne {
+	if s != nil {
+		uuo.SetPhoneNumber(*s)
+	}
+	return uuo
+}
+
+// ClearPhoneNumber clears the value of the "phone_number" field.
+func (uuo *UserUpdateOne) ClearPhoneNumber() *UserUpdateOne {
+	uuo.mutation.ClearPhoneNumber()
+	return uuo
+}
+
 // SetFirstName sets the "first_name" field.
 func (uuo *UserUpdateOne) SetFirstName(s string) *UserUpdateOne {
 	uuo.mutation.SetFirstName(s)
@@ -326,29 +588,102 @@ func (uuo *UserUpdateOne) ClearLastName() *UserUpdateOne {
 	return uuo
 }
 
-// SetEmail sets the "email" field.
-func (uuo *UserUpdateOne) SetEmail(s string) *UserUpdateOne {
-	uuo.mutation.SetEmail(s)
+// SetLoginCount sets the "login_count" field.
+func (uuo *UserUpdateOne) SetLoginCount(i int) *UserUpdateOne {
+	uuo.mutation.ResetLoginCount()
+	uuo.mutation.SetLoginCount(i)
 	return uuo
 }
 
-// SetNillableEmail sets the "email" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableEmail(s *string) *UserUpdateOne {
-	if s != nil {
-		uuo.SetEmail(*s)
+// SetNillableLoginCount sets the "login_count" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableLoginCount(i *int) *UserUpdateOne {
+	if i != nil {
+		uuo.SetLoginCount(*i)
 	}
 	return uuo
 }
 
-// ClearEmail clears the value of the "email" field.
-func (uuo *UserUpdateOne) ClearEmail() *UserUpdateOne {
-	uuo.mutation.ClearEmail()
+// AddLoginCount adds i to the "login_count" field.
+func (uuo *UserUpdateOne) AddLoginCount(i int) *UserUpdateOne {
+	uuo.mutation.AddLoginCount(i)
 	return uuo
+}
+
+// AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
+func (uuo *UserUpdateOne) AddSessionIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddSessionIDs(ids...)
+	return uuo
+}
+
+// AddSessions adds the "sessions" edges to the Session entity.
+func (uuo *UserUpdateOne) AddSessions(s ...*Session) *UserUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uuo.AddSessionIDs(ids...)
+}
+
+// AddOtpIDs adds the "otps" edge to the OTP entity by IDs.
+func (uuo *UserUpdateOne) AddOtpIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.AddOtpIDs(ids...)
+	return uuo
+}
+
+// AddOtps adds the "otps" edges to the OTP entity.
+func (uuo *UserUpdateOne) AddOtps(o ...*OTP) *UserUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return uuo.AddOtpIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
+}
+
+// ClearSessions clears all "sessions" edges to the Session entity.
+func (uuo *UserUpdateOne) ClearSessions() *UserUpdateOne {
+	uuo.mutation.ClearSessions()
+	return uuo
+}
+
+// RemoveSessionIDs removes the "sessions" edge to Session entities by IDs.
+func (uuo *UserUpdateOne) RemoveSessionIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveSessionIDs(ids...)
+	return uuo
+}
+
+// RemoveSessions removes "sessions" edges to Session entities.
+func (uuo *UserUpdateOne) RemoveSessions(s ...*Session) *UserUpdateOne {
+	ids := make([]int, len(s))
+	for i := range s {
+		ids[i] = s[i].ID
+	}
+	return uuo.RemoveSessionIDs(ids...)
+}
+
+// ClearOtps clears all "otps" edges to the OTP entity.
+func (uuo *UserUpdateOne) ClearOtps() *UserUpdateOne {
+	uuo.mutation.ClearOtps()
+	return uuo
+}
+
+// RemoveOtpIDs removes the "otps" edge to OTP entities by IDs.
+func (uuo *UserUpdateOne) RemoveOtpIDs(ids ...int) *UserUpdateOne {
+	uuo.mutation.RemoveOtpIDs(ids...)
+	return uuo
+}
+
+// RemoveOtps removes "otps" edges to OTP entities.
+func (uuo *UserUpdateOne) RemoveOtps(o ...*OTP) *UserUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return uuo.RemoveOtpIDs(ids...)
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -412,6 +747,11 @@ func (uuo *UserUpdateOne) check() error {
 			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "User.username": %w`, err)}
 		}
 	}
+	if v, ok := uuo.mutation.PhoneNumber(); ok {
+		if err := user.PhoneNumberValidator(v); err != nil {
+			return &ValidationError{Name: "phone_number", err: fmt.Errorf(`ent: validator failed for field "User.phone_number": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -456,6 +796,18 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if uuo.mutation.UsernameCleared() {
 		_spec.ClearField(user.FieldUsername, field.TypeString)
 	}
+	if value, ok := uuo.mutation.Email(); ok {
+		_spec.SetField(user.FieldEmail, field.TypeString, value)
+	}
+	if uuo.mutation.EmailCleared() {
+		_spec.ClearField(user.FieldEmail, field.TypeString)
+	}
+	if value, ok := uuo.mutation.PhoneNumber(); ok {
+		_spec.SetField(user.FieldPhoneNumber, field.TypeString, value)
+	}
+	if uuo.mutation.PhoneNumberCleared() {
+		_spec.ClearField(user.FieldPhoneNumber, field.TypeString)
+	}
 	if value, ok := uuo.mutation.FirstName(); ok {
 		_spec.SetField(user.FieldFirstName, field.TypeString, value)
 	}
@@ -468,11 +820,101 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if uuo.mutation.LastNameCleared() {
 		_spec.ClearField(user.FieldLastName, field.TypeString)
 	}
-	if value, ok := uuo.mutation.Email(); ok {
-		_spec.SetField(user.FieldEmail, field.TypeString, value)
+	if value, ok := uuo.mutation.LoginCount(); ok {
+		_spec.SetField(user.FieldLoginCount, field.TypeInt, value)
 	}
-	if uuo.mutation.EmailCleared() {
-		_spec.ClearField(user.FieldEmail, field.TypeString)
+	if value, ok := uuo.mutation.AddedLoginCount(); ok {
+		_spec.AddField(user.FieldLoginCount, field.TypeInt, value)
+	}
+	if uuo.mutation.SessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SessionsTable,
+			Columns: []string{user.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedSessionsIDs(); len(nodes) > 0 && !uuo.mutation.SessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SessionsTable,
+			Columns: []string{user.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.SessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.SessionsTable,
+			Columns: []string{user.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.OtpsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.OtpsTable,
+			Columns: []string{user.OtpsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(otp.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedOtpsIDs(); len(nodes) > 0 && !uuo.mutation.OtpsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.OtpsTable,
+			Columns: []string{user.OtpsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(otp.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.OtpsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.OtpsTable,
+			Columns: []string{user.OtpsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(otp.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &User{config: uuo.config}
 	_spec.Assign = _node.assignValues
