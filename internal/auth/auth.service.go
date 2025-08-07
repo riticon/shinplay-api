@@ -64,7 +64,7 @@ func NewAuthService(userService *user.UserService, otpService *otp.OTPService, s
 	}
 }
 
-func (s *AuthService) LoginUser(user *ent.User, ipAddress string, userAgent string) (token Token, userInfo UserInfo, sessionID string, err error) {
+func (s *AuthService) LoginUser(user *ent.User, ipAddress string, userAgent string) (Token, UserInfo, string, error) {
 	// Create a new session for the user
 	tokens, err := s.GenerateAuthTokens(user)
 	if err != nil {
@@ -72,7 +72,7 @@ func (s *AuthService) LoginUser(user *ent.User, ipAddress string, userAgent stri
 		return Token{}, UserInfo{}, "", err
 	}
 
-	userInfo = UserInfo{
+	userInfo := UserInfo{
 		AuthID:      user.AuthID,
 		PhoneNumber: user.PhoneNumber,
 		UserName:    user.Username,
