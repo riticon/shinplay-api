@@ -213,3 +213,29 @@ func (h *AuthHandler) RefreshAccessToken(ctx *fiber.Ctx) error {
 		},
 	})
 }
+
+func (h *AuthHandler) Logout(ctx *fiber.Ctx) error {
+	sessionID := ctx.Cookies("session_id")
+	if sessionID == "" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Un Authorized",
+		})
+	}
+
+	err := h.authService.Logout(sessionID)
+	if err != nil {
+		h.config.Logger.Error("Failed to logout", zap.Error(err))
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to logout, please try again later",
+		})
+	}
+
+	ctx.ClearCookie("session_id")
+
+	return ctx.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Logged out successfully",
+	})
+}

@@ -34,6 +34,7 @@ type AuthServiceIntr interface {
 	LoginUser(user *ent.User) (token Token, err error)
 	ValidateToken(token string) bool
 	RefreshAccessToken(sessionID string) (Token, error)
+	Logout(sessionID string) error
 }
 
 type AuthService struct {
@@ -338,4 +339,16 @@ func (s *AuthService) RefreshAccessToken(sessionID string) (Token, error) {
 	}
 
 	return tokens, nil
+}
+
+func (s *AuthService) Logout(sessionID string) error {
+	// Delete the session
+	_, err := s.sessionRepository.DeleteSession(s.ctx, sessionID)
+	if err != nil {
+		s.config.Logger.Error("Failed to delete session", zap.String("session_id", sessionID), zap.Error(err))
+		return fmt.Errorf("failed to delete session: %w", err)
+	}
+
+	s.config.Logger.Info("User logged out successfully", zap.String("session_id", sessionID))
+	return nil
 }
