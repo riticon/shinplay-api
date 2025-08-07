@@ -85,8 +85,11 @@ func main() {
 		app.Post("/auth/whatsapp/send-otp", r.AuthHandler.SendWhatsAppOTP)
 		app.Post("/auth/whatsapp/verify-otp", r.AuthHandler.VerifyWhatsAppOTP)
 		app.Post("/auth/google/oauth", r.AuthHandler.GoogleOauthSignin)
+		app.Get("/auth/refresh-token", r.AuthHandler.RefreshAccessToken)
 
+		// beyond this point, all routes require authentication
 		app.Use(r.AuthHandler.AuthenticateUser) // Apply auth middleware
+
 		// user routes
 		app.Get("/users/username", r.UserHandler.CheckUsernameAvailability)
 		app.Post("/users/username", r.UserHandler.ChangeUsername)

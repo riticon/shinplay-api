@@ -4,17 +4,25 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/shinplay/internal/auth/session"
 	"github.com/shinplay/internal/config"
 	"go.uber.org/zap"
 )
+
+type AuthHandlerIntr interface {
+	SendWhatsAppOTP(ctx *fiber.Ctx) error
+	VerifyWhatsAppOTP(ctx *fiber.Ctx) error
+	GoogleOauthSignin(ctx *fiber.Ctx) error
+	AuthenticateUser(ctx *fiber.Ctx) error
+	RefreshAccessToken(ctx *fiber.Ctx) error
+	Logout(ctx *fiber.Ctx) error
+}
 
 type AuthHandler struct {
 	authService *AuthService
 	config      *config.Config
 }
 
-func NewAuthHandler(authService *AuthService, sessionRepository *session.SessionRepository, config *config.Config) *AuthHandler {
+func NewAuthHandler(authService *AuthService, config *config.Config) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
 		config:      config,
@@ -172,6 +180,36 @@ func (h *AuthHandler) AuthenticateUser(ctx *fiber.Ctx) error {
 	}
 
 	ctx.Locals("user", user)
+	ctx.Locals("accessToken", token)
 
 	return ctx.Next()
+}
+
+func (h *AuthHandler) RefreshAccessToken(ctx *fiber.Ctx) error {
+	sessionID := ctx.Cookies("session_id")
+	if sessionID == "" {
+		return ctx.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Un Authorized",
+		})
+	}
+
+	h.config.Logger.Info("existing accessToken", zap.String("session_id", sessionID))
+
+	tokens, err := h.authService.RefreshAccessToken(sessionID)
+	if err != nil {
+		h.config.Logger.Warn("Failed to refresh access token", zap.Error(err))
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "No Session Found or Session Expired",
+		})
+	}
+
+	return ctx.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Access token refreshed successfully",
+		"data": fiber.Map{
+			"access_token": tokens.AccessToken,
+		},
+	})
 }

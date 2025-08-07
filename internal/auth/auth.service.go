@@ -33,6 +33,7 @@ type AuthServiceIntr interface {
 	generateRefreshToken(user *ent.User) (string, error)
 	LoginUser(user *ent.User) (token Token, err error)
 	ValidateToken(token string) bool
+	RefreshAccessToken(sessionID string) (Token, error)
 }
 
 type AuthService struct {
@@ -40,6 +41,7 @@ type AuthService struct {
 	otpService        *otp.OTPService
 	sessionRepository *session.SessionRepository
 	config            *config.Config
+	ctx               context.Context
 }
 
 type UserInfo struct {
@@ -51,12 +53,13 @@ type UserInfo struct {
 	LastName    string `json:"last_name"`
 }
 
-func NewAuthService(userService *user.UserService, otpService *otp.OTPService, sessionRepository *session.SessionRepository, config *config.Config) *AuthService {
+func NewAuthService(userService *user.UserService, otpService *otp.OTPService, sessionRepository *session.SessionRepository, config *config.Config, ctx context.Context) *AuthService {
 	return &AuthService{
 		userService:       userService,
 		otpService:        otpService,
 		sessionRepository: sessionRepository,
 		config:            config,
+		ctx:               ctx,
 	}
 }
 
@@ -303,4 +306,36 @@ func (s *AuthService) ValidateToken(token string) (bool, *ent.User) {
 	}
 
 	return parsedToken.Valid, user
+}
+
+func (s *AuthService) RefreshAccessToken(sessionID string) (Token, error) {
+	session, err := s.sessionRepository.FindSessionByID(s.ctx, sessionID)
+	if err != nil {
+		s.config.Logger.Error("Failed to get session by ID", zap.String("session_id", sessionID), zap.Error(err))
+		return Token{}, fmt.Errorf("failed to get session: %w", err)
+	}
+
+	// validate Refresh token
+	isValid, user := s.ValidateToken(session.RefreshToken)
+	if !isValid {
+		s.config.Logger.Info("Invalid or expired refresh token", zap.String("session_id", sessionID))
+		return Token{}, fmt.Errorf("invalid or expired refresh token")
+	}
+
+	tokens, err := s.GenerateAuthTokens(user)
+	if err != nil {
+		s.config.Logger.Error("Failed to generate new auth tokens", zap.Error(err))
+		return Token{}, fmt.Errorf("failed to generate new auth tokens: %w", err)
+	}
+
+	_, err = session.Update().
+		SetRefreshToken(tokens.RefreshToken).
+		Save(s.ctx)
+
+	if err != nil {
+		s.config.Logger.Error("Failed to update session", zap.Error(err))
+		return Token{}, fmt.Errorf("failed to update session: %w", err)
+	}
+
+	return tokens, nil
 }
