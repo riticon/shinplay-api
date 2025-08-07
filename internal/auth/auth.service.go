@@ -24,8 +24,6 @@ type Token struct {
 }
 
 type AuthServiceIntr interface {
-	// LoginOrSignupWithNumber(phoneNumber string, channel string) (token Token, err error)
-	// LoginOrSignupWithEmail(email string, channel string) (token Token, err error)
 	SendWhatsAppOTP(phoneNumber string) error
 	GenerateOTP(phoneNumber string) (otp string, err error)
 	GoogleOauthSignIn(idToken string, ipAddress string, userAgent string) (token Token, userInfo UserInfo, sessionID string, err error)
@@ -35,8 +33,6 @@ type AuthServiceIntr interface {
 	generateRefreshToken(user *ent.User) (string, error)
 	LoginUser(user *ent.User) (token Token, err error)
 	ValidateToken(token string) bool
-	// RefreshToken(refreshToken string) (token Token, err error)
-	// Logout(userId, sessionId string) error
 }
 
 type AuthService struct {
