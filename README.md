@@ -19,6 +19,29 @@ Once All Dev Dependencies are installed now you're ready to run dev server with 
 make dev
 ```
 
+### IP Binding for Development
+
+By default, the development server might bind to `localhost` (127.0.0.1), making it accessible only from your local machine. If you need to access the development server from other devices on your network (e.g., a mobile device for testing), you'll need to configure it to bind to your local IP address or `0.0.0.0`.
+
+**Using `0.0.0.0`:**
+Binding to `0.0.0.0` makes the server accessible on all available network interfaces. This is generally the easiest way to make your development server accessible from other devices on the same network.
+
+Example for `.env.development`:
+```
+HOST=0.0.0.0
+PORT=8080
+```
+
+**Using your specific IP address:**
+Alternatively, you can bind the server to your machine's specific local IP address. This is useful if you want to restrict access to a particular network interface or if `0.0.0.0` causes issues in your environment.
+
+To find your local IP address:
+- **Linux/macOS:** Open a terminal and run `ifconfig` or `ip addr show`. Look for an entry like `inet` followed by an IP address (e.g., `192.168.1.100`).
+
+Ensure that your firewall settings allow incoming connections on the specified port if you are accessing from an external device.
+
+then call `GET 192.168.0.128:8080` -> you should see the API response
+
 ### To Build the package
 ```bash
 make build

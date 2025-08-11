@@ -102,5 +102,5 @@ func main() {
 
 	cnf.Logger.Info("Starting Shinplay API...")
 
-	app.Listen(":" + cnf.Server.Port)
+	app.Listen(cnf.Server.Host + ":" + cnf.Server.Port)
 }
