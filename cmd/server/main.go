@@ -17,6 +17,7 @@ import (
 	"github.com/shinplay/internal/auth/otp"
 	"github.com/shinplay/internal/auth/session"
 	"github.com/shinplay/internal/config"
+	"github.com/shinplay/internal/country"
 	"github.com/shinplay/internal/db"
 	"github.com/shinplay/internal/user"
 	"go.uber.org/dig"
@@ -43,6 +44,10 @@ func main() {
 	container.Provide(auth.NewAuthHandler)
 
 	container.Provide(user.NewUserHandler)
+
+	// countries (service + handler)
+	container.Provide(country.NewService)
+	container.Provide(country.NewHandler)
 
 	app := fiber.New(
 		fiber.Config{
@@ -80,6 +85,8 @@ func main() {
 
 	// all the routes goes here
 	err := container.Invoke(func(r internal.Routes) {
+
+		app.Get("/countries", r.CountryHandler.List)
 
 		// auth routes
 		app.Post("/auth/whatsapp/send-otp", r.AuthHandler.SendWhatsAppOTP)
